@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-import normalize from 'normalize-mongoose'
 import mongoosePaginate from 'mongoose-paginate-v2'
 
 const country = mongoose.Schema({
@@ -16,7 +15,6 @@ const country = mongoose.Schema({
     }
 })
 
-country.plugin(normalize)
 country.plugin(mongoosePaginate)
 
 const Country = mongoose.model('Country', country)

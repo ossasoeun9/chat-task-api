@@ -1,18 +1,21 @@
 import mongoose from "mongoose";
-import normalize from "normalize-mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 import Country from "./country-model.js";
 
 const userSchema = mongoose.Schema({
   username: {
     type: String,
-    requried: true,
-    unique: true,
+    default: null,
   },
   phone_number: {
     type: String,
     unique: true,
     requried: true
+  },
+  otp_code: {
+    type: Number,
+    expires: '1m',
+    default: null,
   },
   country: {
     type: mongoose.Types.ObjectId,
@@ -53,7 +56,6 @@ const userSchema = mongoose.Schema({
   },
 });
 
-userSchema.plugin(normalize);
 userSchema.plugin(mongoosePaginate);
 
 const User = mongoose.model("User", userSchema);

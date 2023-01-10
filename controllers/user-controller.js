@@ -8,12 +8,6 @@ const createUser = async (req, res) => {
     });
   }
 
-  if (!req.body.username) {
-    messages.push({
-      username: "Username field is required",
-    });
-  }
-
   if (!req.body.country) {
     messages.push({
       country: "Country field is required",
@@ -29,7 +23,7 @@ const createUser = async (req, res) => {
   try {
     const user = await User.create({
       phone_number: req.body.phone_number,
-      username: req.body.username,
+      // username: req.body.username,
       country: req.body.country,
     });
     res.json(user);
