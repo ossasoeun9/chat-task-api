@@ -1,5 +1,5 @@
 import express from "express";
-import { refreshToken, requestOTP, verifyOTP } from "../controllers/auth-controller.js";
+import {refreshToken, requestOTP, verifyOTP} from "../controllers/auth-controller.js";
 
 const router = express.Router();
 

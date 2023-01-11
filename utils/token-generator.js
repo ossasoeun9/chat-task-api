@@ -13,6 +13,16 @@ const generateOtpToken = (phone_number, country, otp_code, expiresIn) => {
   );
 };
 
+const generatePhoneChangeToken = (phone_number, country, otp_code, expiresIn) => {
+  return jsonwebtoken.sign(
+    { phone_number, country, otp_code },
+    process.env.PHONE_CHANGE_TOKEN_KEY,
+    {
+      expiresIn: expiresIn,
+    }
+  );
+};
+
 const generateAccessToken = (user, expiresIn) => {
   return jsonwebtoken.sign({ user }, process.env.ACCESS_TOKEN_KEY, {
     expiresIn: expiresIn,
@@ -25,4 +35,4 @@ const generateRefreshToken = (user, expiresIn) => {
   });
 };
 
-export { generateOtpToken, generateAccessToken, generateRefreshToken };
+export { generateOtpToken, generatePhoneChangeToken, generateAccessToken, generateRefreshToken };

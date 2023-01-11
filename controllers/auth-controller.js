@@ -50,7 +50,7 @@ const requestOTP = async (req, res) => {
 
 const verifyOTP = async (req, res) => {
   const { token, otp_code } = req.body
-  if (!(token, otp_code)) {
+  if (!(token && otp_code)) {
     return res.status(400).json({
       message: 'Token and OTP Code is required'
     })
@@ -73,8 +73,6 @@ const verifyOTP = async (req, res) => {
 
     const user = await User.findOne({ phone_number: data.phone_number })
 
-    console.log(user)
-
     let newUser
     if (!user) {
       const username = generateUsername()
@@ -92,7 +90,7 @@ const verifyOTP = async (req, res) => {
     expDate.setDate(expDate.getDate() + 7)
 
     return res.json({
-      data: user,
+      data: user || newUser,
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer',
