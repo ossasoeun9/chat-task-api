@@ -1,14 +1,14 @@
-import Country from "../models/country-model.js";
+import Country from "../models/country-model.js"
 
 const fetchPhoneCode = async (req, res) => {
   try {
-    const phoneCodes = await Country.find();
+    const phoneCodes = await Country.find()
     res.json(phoneCodes);
   } catch (error) {
     res.send({
       message: error,
-    });
+    })
   }
-};
+}
 
-export default fetchPhoneCode;
+export default fetchPhoneCode

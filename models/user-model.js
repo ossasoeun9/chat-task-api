@@ -5,19 +5,15 @@ import Country from "./country-model.js";
 const userSchema = mongoose.Schema({
   username: {
     type: String,
-    default: null,
+    unique: true,
+    requried: true
   },
   phone_number: {
     type: String,
     unique: true,
     requried: true
   },
-  otp_code: {
-    type: Number,
-    expires: '1m',
-    default: null,
-  },
-  country: {
+  country_id: {
     type: mongoose.Types.ObjectId,
     ref: Country,
     required: true,
