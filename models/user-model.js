@@ -13,7 +13,7 @@ const userSchema = mongoose.Schema({
     unique: true,
     requried: true
   },
-  country_id: {
+  country: {
     type: mongoose.Types.ObjectId,
     ref: Country,
     required: true,

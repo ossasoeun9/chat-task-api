@@ -71,16 +71,17 @@ const verifyOTP = async (req, res) => {
       })
     }
 
-    const user = await User.findOne({ phone_number: data.phone_number })
+    const user = await User.findOne({ phone_number: data.phone_number }).populate("country")
 
     let newUser
     if (!user) {
       const username = generateUsername()
       newUser = await User.create({
         phone_number: data.phone_number,
-        country_id: data.country._id,
+        country: data.country._id,
         username
       })
+      newUser = await User.findById(newUser._id).populate("country")
     }
 
     const accessToken = generateAccessToken(user || newUser, '7d')
@@ -110,7 +111,7 @@ const refreshToken = async (req, res) => {
       message: error
     })
 
-    const user = await User.findById(data.user._id)
+    const user = await User.findById(data.user._id).populate("country")
 
     if (!user) return res.status(401).json({
       message: "User not found"
