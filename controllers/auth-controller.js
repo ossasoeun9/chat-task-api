@@ -1,11 +1,13 @@
 import otpGenerator from 'otp-generator'
 import bcryptjs from 'bcryptjs'
+import axios from 'axios'
 import { generateAccessToken, generateOtpToken, generateRefreshToken } from '../utils/token-generator.js'
 import { containsOnlyNumbers } from '../utils/validator.js'
 import Country from '../models/country-model.js'
 import jsonwebtoken from 'jsonwebtoken'
 import { generateUsername } from 'unique-username-generator'
 import User from '../models/user-model.js'
+import DeviceLoggin from '../models/device-loggin-model.js'
 
 const requestOTP = async (req, res) => {
   const { phone_number, country_id } = req.body
@@ -90,6 +92,15 @@ const verifyOTP = async (req, res) => {
     let expDate = new Date();
     expDate.setDate(expDate.getDate() + 7)
 
+    const { id } = user || newUser
+
+    storeLogin(req, id, {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      token_type: 'Bearer',
+      expires_in: expDate,
+    })
+
     return res.json({
       data: user || newUser,
       access_token: accessToken,
@@ -101,7 +112,7 @@ const verifyOTP = async (req, res) => {
 }
 
 const refreshToken = async (req, res) => {
-  const {refresh_token} = req.body
+  const { refresh_token } = req.body
   if (!refresh_token) return res.status(401).json({
     message: "Refresh token is required"
   })
@@ -123,14 +134,51 @@ const refreshToken = async (req, res) => {
     let expDate = new Date();
     expDate.setDate(expDate.getDate() + 7)
 
+    const { id } = user
+
+    storeLogin(req, id, {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      token_type: 'Bearer',
+      expires_in: expDate,
+    })
+
     return res.json({
-      data: user || newUser,
+      data: user,
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer',
       expires_in: expDate,
     })
   })
+}
+
+const storeLogin = async (req, userId, token) => {
+  const user = userId;
+  const ip_address = req.headers['x-forwarded-for']
+  const user_agent = req.headers['user-agent']
+  const oldDevice = await DeviceLoggin.findOne({ ip_address, user_agent, user })
+
+  if (!oldDevice) {
+    try {
+      const resonse = await axios.get(`https://ipgeolocation.abstractapi.com/v1/?api_key=2141d285a889453486ee7df47ba76aad&ip_address=${ip_address}`)
+      await DeviceLoggin.create({
+        ip_address,
+        user_agent,
+        geoip: resonse.data,
+        user,
+        token,
+      })
+    } catch (error) {
+      console.log(error)
+    }
+  } else {
+    try {
+      await DeviceLoggin.updateOne({ _id: oldDevice._id }, { loggin_time: Date.now() })
+    } catch (error) {
+      console.log(error)
+    }
+  }
 }
 
 export { requestOTP, verifyOTP, refreshToken }

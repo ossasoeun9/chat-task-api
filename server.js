@@ -3,12 +3,13 @@ import dotenv from "dotenv"
 import formData from "express-form-data"
 import os from "os"
 
+import createDir from "./configs/dir-config.js"
 import connectDB from "./configs/db-config.js"
 import verifyToken from "./middlewares/auth-middleware.js"
 import phoneCodeRoute from "./routes/country-route.js"
 import userRoute from "./routes/user-route.js"
 import authRoute from "./routes/auth-route.js"
-import createDir from "./configs/dir-config.js"
+import deviceRoute from "./routes/device-route.js"
 
 dotenv.config()
 connectDB()
@@ -32,6 +33,7 @@ app.use('/auth', authRoute)
 // Protected route
 app.use(verifyToken);
 app.use("/users", userRoute)
+app.use("/device-login", deviceRoute)
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
