@@ -15,6 +15,8 @@ import { containsOnlyNumbers } from "../utils/validator.js"
 
 dotenv.config()
 const apiKey = process.env.API_KEY
+const geoipApi = process.env.GEOIP_API
+const refreshTokenKey = process.env.REFRESH_TOKEN_KEY
 
 const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
@@ -122,9 +124,9 @@ const refreshToken = async (req, res) => {
       message: "Refresh token is required",
     })
 
-    jsonwebtoken.verify(
+  jsonwebtoken.verify(
     refresh_token,
-    process.env.REFRESH_TOKEN_KEY,
+    refreshTokenKey,
     async (error, data) => {
       if (error)
         return res.status(400).json({
@@ -177,7 +179,7 @@ const storeLogin = async (req, userId, token) => {
   if (!oldDevice) {
     try {
       const resonse = await axios.get(
-        `https://ipgeolocation.abstractapi.com/v1/?api_key=2141d285a889453486ee7df47ba76aad&ip_address=${ip_address}`
+        `${geoipApi}&ip_address=${ip_address}`
       )
       await DeviceLoggin.create({
         ip_address,
@@ -193,7 +195,7 @@ const storeLogin = async (req, userId, token) => {
     try {
       await DeviceLoggin.updateOne(
         { _id: oldDevice._id },
-        { loggin_time: Date.now() }
+        { token, loggin_time: Date.now() }
       )
     } catch (error) {
       console.log(error)

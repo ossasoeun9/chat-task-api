@@ -1,16 +1,20 @@
-import otpGenerator from "otp-generator"
+// import otpGenerator from "otp-generator"
 import bcryptjs from "bcryptjs"
 import dotenv from "dotenv"
 import jsonwebtoken from "jsonwebtoken"
 import fs from "fs"
 import Country from "../models/country-model.js"
 import User from "../models/user-model.js"
-import { generatePhoneChangeToken } from "../utils/token-generator.js"
+// import { generatePhoneChangeToken } from "../utils/token-generator.js"
 import { containsOnlyNumbers } from "../utils/validator.js"
 import { randomBytes } from "crypto"
 import path from "path"
+import { identitytoolkit } from "@googleapis/identitytoolkit"
 
 dotenv.config()
+const apiKey = process.env.API_KEY
+
+const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
 const getUser = async (req) => {
   const { _id } = req.user
@@ -170,11 +174,11 @@ const changeUsername = async (req, res) => {
 }
 
 const requestChangePhoneNumber = async (req, res) => {
-  const { phone_number, country_id } = req.body
+  const { recaptcha_token, phone_number, country_id } = req.body
 
-  if (!(phone_number && country_id))
+  if (!(recaptcha_token, phone_number && country_id))
     return res.status(400).json({
-      message: "Phone number and country id is required",
+      message: "Recaptcha token, Phone number and country id is required",
     })
 
   if (!containsOnlyNumbers(phone_number))
@@ -200,71 +204,150 @@ const requestChangePhoneNumber = async (req, res) => {
 
   const newPhoneNumber = country.dial_code + phone_number
 
-  const otp_code = otpGenerator.generate(5, {
-    specialChars: false,
-    upperCaseAlphabets: false,
-    lowerCaseAlphabets: false,
-  })
-
-  console.log(`Your verifaction code is ${otp_code}`)
-
-  const hashed_otp = await bcryptjs.hash(otp_code, 10)
-
-  const token = generatePhoneChangeToken(
-    newPhoneNumber,
-    country,
-    hashed_otp,
-    "600s"
-  )
-
-  return res.json({ token })
+  googleIdentitytoolkit.relyingparty
+    .sendVerificationCode({
+      phoneNumber: newPhoneNumber,
+      recaptchaToken: recaptcha_token,
+    })
+    .then((response) => {
+      return res.json({
+        session_info: response.data.sessionInfo,
+      })
+    })
+    .catch((error) => {
+      return res.status(500).send(error)
+    })
 }
 
 const verifyChangePhoneNumber = async (req, res) => {
-  const { token, otp_code } = req.body
-  if (!(token && otp_code)) {
+  const { session_info, otp_code, country_id, old_phone_number } = req.body
+  if (!(session_info && otp_code && country_id)) {
     return res.status(400).json({
-      message: "Token and OTP Code is required",
+      message: "Session info, OTP code and Country id is required",
     })
   }
 
-  jsonwebtoken.verify(
-    token,
-    process.env.PHONE_CHANGE_TOKEN_KEY,
-    async (error, data) => {
-      if (error) {
-        return res.status(403).json({
-          message: error,
-        })
-      }
-
-      const isCorrect = await bcryptjs.compare(otp_code, data.otp_code)
-
-      if (!isCorrect) {
-        return res.status(400).json({
-          message: "Verification code is incorrect",
-        })
-      }
-
-      const { phone_number, country } = data
-
+  googleIdentitytoolkit.relyingparty
+    .verifyPhoneNumber({
+      sessionInfo: session_info,
+      code: otp_code,
+    })
+    .then(async (response) => {
+      const { phoneNumber } = response.data
       try {
         await User.updateOne(
           { _id: req.user._id },
-          { phone_number, country_id: country._id }
+          { phone_number: phoneNumber, country: country_id }
         )
+        const user = await getUser(req)
+        return res.json(user)
       } catch (error) {
         return res.status(500).json({
           message: error,
         })
       }
-
-      const user = await getUser(req)
-
-      return res.json(user)
-    }
-  )
+    })
+    .catch((error) => {
+      return res.status(500).json(error)
+    })
 }
+
+// const requestChangePhoneNumber = async (req, res) => {
+//   const { phone_number, country_id } = req.body
+
+//   if (!(phone_number && country_id))
+//     return res.status(400).json({
+//       message: "Phone number and country id is required",
+//     })
+
+//   if (!containsOnlyNumbers(phone_number))
+//     return res.status(400).json({
+//       message: "Phone number must be number",
+//     })
+
+//   const getCountry = await Country.findById(country_id)
+//   const otherUser = await User.find({
+//     phone_number: getCountry.dial_code + phone_number,
+//   })
+//   if (otherUser.length > 0)
+//     return res.status(400).json({
+//       message: "Phone number is used by another account",
+//     })
+
+//   let country
+//   try {
+//     country = await Country.findById(country_id)
+//   } catch (error) {
+//     return res.status(400).json({ message: error })
+//   }
+
+//   const newPhoneNumber = country.dial_code + phone_number
+
+//   const otp_code = otpGenerator.generate(5, {
+//     specialChars: false,
+//     upperCaseAlphabets: false,
+//     lowerCaseAlphabets: false,
+//   })
+
+//   console.log(`Your verifaction code is ${otp_code}`)
+
+//   const hashed_otp = await bcryptjs.hash(otp_code, 10)
+
+//   const token = generatePhoneChangeToken(
+//     newPhoneNumber,
+//     country,
+//     hashed_otp,
+//     "600s"
+//   )
+
+//   return res.json({ token })
+// }
+
+// const verifyChangePhoneNumber = async (req, res) => {
+//   const { token, otp_code } = req.body
+//   if (!(token && otp_code)) {
+//     return res.status(400).json({
+//       message: "Token and OTP Code is required",
+//     })
+//   }
+
+//   jsonwebtoken.verify(
+//     token,
+//     process.env.PHONE_CHANGE_TOKEN_KEY,
+//     async (error, data) => {
+//       if (error) {
+//         return res.status(403).json({
+//           message: error,
+//         })
+//       }
+
+//       const isCorrect = await bcryptjs.compare(otp_code, data.otp_code)
+
+//       if (!isCorrect) {
+//         return res.status(400).json({
+//           message: "Verification code is incorrect",
+//         })
+//       }
+
+//       const { phone_number, country } = data
+
+//       try {
+//         await User.updateOne(
+//           { _id: req.user._id },
+//           { phone_number, country_id: country._id }
+//         )
+//       } catch (error) {
+//         return res.status(500).json({
+//           message: error,
+//         })
+//       }
+
+//       const user = await getUser(req)
+
+//       return res.json(user)
+//     }
+//   )
+// }
 
 export {
   getProfile,
