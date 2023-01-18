@@ -1,5 +1,4 @@
 import mongoose from "mongoose"
-import { UAParser } from "ua-parser-js"
 import User from "./user-model.js"
 
 const deviceLoggin = mongoose.Schema({
@@ -18,8 +17,8 @@ const deviceLoggin = mongoose.Schema({
   token: {
     type: Object,
     select: false,
-  }
+  },
 })
 
-const DeviceLoggin = mongoose.model('device loggins', deviceLoggin)
+const DeviceLoggin = mongoose.model("device loggins", deviceLoggin)
 export default DeviceLoggin

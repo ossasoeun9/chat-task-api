@@ -1,17 +1,17 @@
-import mongoose from "mongoose";
-import mongoosePaginate from "mongoose-paginate-v2";
-import Country from "./country-model.js";
+import mongoose from "mongoose"
+import mongoosePaginate from "mongoose-paginate-v2"
+import Country from "./country-model.js"
 
 const userSchema = mongoose.Schema({
   username: {
     type: String,
     unique: true,
-    requried: true
+    requried: true,
   },
   phone_number: {
     type: String,
     unique: true,
-    requried: true
+    requried: true,
   },
   country: {
     type: mongoose.Types.ObjectId,
@@ -44,15 +44,15 @@ const userSchema = mongoose.Schema({
   },
   updated_at: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   created_at: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
-});
+})
 
-userSchema.plugin(mongoosePaginate);
+userSchema.plugin(mongoosePaginate)
 
-const User = mongoose.model("User", userSchema);
-export default User;
+const User = mongoose.model("User", userSchema)
+export default User

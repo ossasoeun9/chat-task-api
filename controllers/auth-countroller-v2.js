@@ -1,24 +1,29 @@
-import otpGenerator from "otp-generator"
-import bcryptjs from "bcryptjs"
+import { identitytoolkit } from "@googleapis/identitytoolkit"
 import axios from "axios"
+import dotenv from "dotenv"
+import jsonwebtoken from "jsonwebtoken"
+import { generateUsername } from "unique-username-generator"
+
+import Country from "../models/country-model.js"
+import DeviceLoggin from "../models/device-loggin-model.js"
+import User from "../models/user-model.js"
 import {
   generateAccessToken,
-  generateOtpToken,
   generateRefreshToken,
 } from "../utils/token-generator.js"
 import { containsOnlyNumbers } from "../utils/validator.js"
-import Country from "../models/country-model.js"
-import jsonwebtoken from "jsonwebtoken"
-import { generateUsername } from "unique-username-generator"
-import User from "../models/user-model.js"
-import DeviceLoggin from "../models/device-loggin-model.js"
+
+dotenv.config()
+const apiKey = process.env.API_KEY
+
+const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
 const requestOTP = async (req, res) => {
-  const { phone_number, country_id } = req.body
+  const { recaptcha_token, phone_number, country_id } = req.body
 
-  if (!(phone_number && country_id)) {
+  if (!(recaptcha_token && phone_number && country_id)) {
     return res.status(400).json({
-      message: "Phone number and country id is required",
+      message: "Recaptcha token, Phone number and country id is required",
     })
   }
 
@@ -37,82 +42,77 @@ const requestOTP = async (req, res) => {
 
   const newPhoneNumber = country.dial_code + phone_number
 
-  const otp_code = otpGenerator.generate(5, {
-    specialChars: false,
-    upperCaseAlphabets: false,
-    lowerCaseAlphabets: false,
-  })
-
-  console.log(`Your verification code is ${otp_code}`)
-
-  const hashed_otp = await bcryptjs.hash(otp_code, 10)
-
-  const token = generateOtpToken(newPhoneNumber, country, hashed_otp, "600s")
-
-  return res.json({ token })
+  googleIdentitytoolkit.relyingparty
+    .sendVerificationCode({
+      recaptchaToken: recaptcha_token,
+      phoneNumber: newPhoneNumber,
+    })
+    .then((response) => {
+      return res.json({
+        session_info: response.data.sessionInfo,
+      })
+    })
+    .catch((error) => {
+      return res.status(500).send(error)
+    })
 }
 
 const verifyOTP = async (req, res) => {
-  const { token, otp_code } = req.body
-  if (!(token && otp_code)) {
+  const { session_info, otp_code, country_id } = req.body
+  if (!(session_info && otp_code && country_id)) {
     return res.status(400).json({
-      message: "Token and OTP Code is required",
+      message: "Session Inf, OTP and Country ID Code is required",
     })
   }
 
-  jsonwebtoken.verify(token, process.env.OTP_TOKEN_KEY, async (error, data) => {
-    if (error) {
-      return res.status(403).json({
-        message: error,
-      })
-    }
-
-    const isCorrect = await bcryptjs.compare(otp_code, data.otp_code)
-
-    if (!isCorrect) {
-      return res.status(400).json({
-        message: "Verification code is incorrect",
-      })
-    }
-
-    const user = await User.findOne({
-      phone_number: data.phone_number,
-    }).populate("country")
-
-    let newUser
-    if (!user) {
-      const username = generateUsername()
-      newUser = await User.create({
-        phone_number: data.phone_number,
-        country: data.country._id,
-        username,
-      })
-      newUser = await User.findById(newUser._id).populate("country")
-    }
-
-    const accessToken = generateAccessToken(user || newUser, "7d")
-    const refreshToken = generateRefreshToken(user || newUser, "90d")
-
-    let expDate = new Date()
-    expDate.setDate(expDate.getDate() + 7)
-
-    const { id } = user || newUser
-
-    storeLogin(req, id, {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      token_type: "Bearer",
-      expires_in: expDate,
+  googleIdentitytoolkit.relyingparty
+    .verifyPhoneNumber({
+      sessionInfo: session_info,
+      code: otp_code,
     })
+    .then(async (response) => {
+      const { phoneNumber } = response.data
+      const user = await User.findOne({
+        phone_number: phoneNumber,
+      }).populate("country")
 
-    return res.json({
-      data: user || newUser,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      token_type: "Bearer",
-      expires_in: expDate,
+      let newUser
+      if (!user) {
+        const username = generateUsername()
+        newUser = await User.create({
+          phone_number: phoneNumber,
+          country: country_id,
+          username,
+        })
+        newUser = await User.findById(newUser._id).populate("country")
+      }
+
+      const accessToken = generateAccessToken(user || newUser, "7d")
+      const refreshToken = generateRefreshToken(user || newUser, "90d")
+
+      let expDate = new Date()
+      expDate.setDate(expDate.getDate() + 7)
+
+      const { id } = user || newUser
+
+      await storeLogin(req, id, {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        token_type: "Bearer",
+        expires_in: expDate,
+      })
+
+      return res.json({
+        data: user || newUser,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        token_type: "Bearer",
+        expires_in: expDate,
+      })
     })
-  })
+    .catch((error) => {
+      return res.status(500).send(error)
+    })
 }
 
 const refreshToken = async (req, res) => {
@@ -122,7 +122,7 @@ const refreshToken = async (req, res) => {
       message: "Refresh token is required",
     })
 
-  jsonwebtoken.verify(
+    jsonwebtoken.verify(
     refresh_token,
     process.env.REFRESH_TOKEN_KEY,
     async (error, data) => {
@@ -146,7 +146,7 @@ const refreshToken = async (req, res) => {
 
       const { id } = user
 
-      storeLogin(req, id, {
+      await storeLogin(req, id, {
         access_token: accessToken,
         refresh_token: refreshToken,
         token_type: "Bearer",

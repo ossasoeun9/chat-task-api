@@ -1,7 +1,7 @@
-import jsonwebtoken from "jsonwebtoken";
-import dotenv from "dotenv";
+import jsonwebtoken from "jsonwebtoken"
+import dotenv from "dotenv"
 
-dotenv.config();
+dotenv.config()
 
 const generateOtpToken = (phone_number, country, otp_code, expiresIn) => {
   return jsonwebtoken.sign(
@@ -10,29 +10,39 @@ const generateOtpToken = (phone_number, country, otp_code, expiresIn) => {
     {
       expiresIn: expiresIn,
     }
-  );
-};
+  )
+}
 
-const generatePhoneChangeToken = (phone_number, country, otp_code, expiresIn) => {
+const generatePhoneChangeToken = (
+  phone_number,
+  country,
+  otp_code,
+  expiresIn
+) => {
   return jsonwebtoken.sign(
     { phone_number, country, otp_code },
     process.env.PHONE_CHANGE_TOKEN_KEY,
     {
       expiresIn: expiresIn,
     }
-  );
-};
+  )
+}
 
 const generateAccessToken = (user, expiresIn) => {
   return jsonwebtoken.sign({ user }, process.env.ACCESS_TOKEN_KEY, {
     expiresIn: expiresIn,
-  });
-};
+  })
+}
 
 const generateRefreshToken = (user, expiresIn) => {
   return jsonwebtoken.sign({ user }, process.env.REFRESH_TOKEN_KEY, {
     expiresIn: expiresIn,
-  });
-};
+  })
+}
 
-export { generateOtpToken, generatePhoneChangeToken, generateAccessToken, generateRefreshToken };
+export {
+  generateOtpToken,
+  generatePhoneChangeToken,
+  generateAccessToken,
+  generateRefreshToken,
+}

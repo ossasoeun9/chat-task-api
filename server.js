@@ -17,25 +17,24 @@ createDir()
 
 const options = {
   uploadDir: os.tmpdir(),
-  autoClean: true
-};
+  autoClean: true,
+}
 
 const app = express()
 
 app.use(express.json())
 app.use(formData.parse(options))
-app.use('/user-profile', express.static('storage/user-profile'))
 
-// Public route
-app.use("/country", phoneCodeRoute);
-app.use('/auth', authRoute)
+app.use("/country", phoneCodeRoute)
+app.use("/auth", authRoute)
+app.use("/user-profile", express.static("storage/user-profile"))
 
 // Protected route
-app.use(verifyToken);
+app.use(verifyToken)
 app.use("/users", userRoute)
 app.use("/device-login", deviceRoute)
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000
 app.listen(port, () => {
-  console.log(`ChatTask app listening on port ${port}!`);
-});
+  console.log(`ChatTask app listening on port ${port}!`)
+})

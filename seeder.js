@@ -1,17 +1,17 @@
-import connectDB from "./configs/db-config.js";
-import countryList from "./asset-data/country-code.js";
-import Country from "./models/country-model.js";
+import connectDB from "./configs/db-config.js"
+import countryList from "./asset-data/country-code.js"
+import Country from "./models/country-model.js"
 
-connectDB();
+connectDB()
 
 const storePhones = async () => {
   try {
-    await Country.deleteMany();
-    await Country.insertMany(countryList);
-    console.log(`Success`);
+    await Country.deleteMany()
+    await Country.insertMany(countryList)
+    console.log(`Success`)
   } catch (error) {
-    console.log(error);
+    console.log(error)
   }
-};
+}
 
-storePhones();
+storePhones()
