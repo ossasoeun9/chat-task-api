@@ -1,11 +1,7 @@
-// import otpGenerator from "otp-generator"
-import bcryptjs from "bcryptjs"
 import dotenv from "dotenv"
-import jsonwebtoken from "jsonwebtoken"
 import fs from "fs"
 import Country from "../models/country-model.js"
 import User from "../models/user-model.js"
-// import { generatePhoneChangeToken } from "../utils/token-generator.js"
 import { containsOnlyNumbers } from "../utils/validator.js"
 import { randomBytes } from "crypto"
 import path from "path"
@@ -16,64 +12,52 @@ const apiKey = process.env.API_KEY
 
 const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
-const getUser = async (req) => {
-  const { _id } = req.user
-  const user = await User.findById(_id).populate("country")
-  if (user?.profile_url != null) {
-    user.profile_url = `${req.protocol}://${req.get(
-      "host"
-    )}/user-profile/${_id}/${user.profile_url}`
-  }
-  return user
-}
-
 const getProfile = async (req, res) => {
-  const data = req.user
-  if (!data)
-    return res.status(400).json({
-      message: "user not found",
+  const {_id} = req.user
+
+  try {
+    const user = await User.findById(_id).populate("country")
+    return res.json(user)
+  } catch (error) {
+    res.status(500).json({
+      message: error
     })
-
-  const user = await getUser(req)
-
-  res.json(user)
+  }
 }
 
 const editName = async (req, res) => {
+  const { _id } = req.user
   const { first_name, last_name } = req.body
 
   if (!first_name)
     return res.status(400).json({
-      message: "First Name is required",
+      message: "First Name is required"
     })
 
   try {
     await User.updateOne({ _id: req.user._id }, { first_name, last_name })
+    const user = await User.findById(_id).populate("country")
+    return res.json(user)
   } catch (error) {
     res.status(500).json({
-      message: error,
+      message: error
     })
   }
-
-  const user = await getUser(req)
-
-  return res.json(user)
 }
 
 const editBio = async (req, res) => {
+  const { _id } = req.user
   const { bio } = req.body
 
   try {
-    await User.updateOne({ _id: req.user._id }, { bio })
+    await User.updateOne({ _id }, { bio })
+    const user = await User.findById(_id).populate("country")
+    return res.json(user)
   } catch (error) {
     res.status(500).json({
-      message: error,
+      message: error
     })
   }
-
-  const user = await getUser(req)
-
-  return res.json(user)
 }
 
 const setProfilePicture = async (req, res) => {
@@ -82,7 +66,7 @@ const setProfilePicture = async (req, res) => {
 
   if (!profile)
     return res.status(400).json({
-      message: "Profile is required",
+      message: "Profile is required"
     })
 
   const dir = `storage/user-profile/${_id}/`
@@ -115,14 +99,14 @@ const setProfilePicture = async (req, res) => {
 
     // clear tmp dir
     fs.unlinkSync(profile.path)
+
+    const user = await User.findById(_id).populate("country")
+    return res.json(user)
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
-
-  const user = await getUser(req)
-  res.send(user)
 }
 
 const removeProfilePicure = async (req, res) => {
@@ -131,7 +115,7 @@ const removeProfilePicure = async (req, res) => {
   const { profile_url } = user
   if (!profile_url)
     return res.status(400).json({
-      message: "Profile was deleted",
+      message: "Profile was deleted"
     })
 
   try {
@@ -139,12 +123,12 @@ const removeProfilePicure = async (req, res) => {
     fs.unlinkSync(`storage/user-profile/${_id}/${profile_url}`)
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
 
   return res.json({
-    message: "Profile is deleted successfuly",
+    message: "Profile is deleted successfuly"
   })
 }
 
@@ -153,7 +137,7 @@ const changeUsername = async (req, res) => {
 
   if (!username)
     return res.status(400).json({
-      message: "Username is required",
+      message: "Username is required"
     })
 
   const otherUser = await User.find({ username })
@@ -162,15 +146,13 @@ const changeUsername = async (req, res) => {
 
   try {
     await User.updateOne({ _id: req.user._id }, { username })
+    const user = await User.findById(_id).populate("country")
+    return res.json(user)
   } catch (error) {
-    res.status(500).json({
-      message: error,
+    return res.status(500).json({
+      message: error
     })
   }
-
-  const user = await getUser(req)
-
-  return res.json(user)
 }
 
 const requestChangePhoneNumber = async (req, res) => {
@@ -178,21 +160,21 @@ const requestChangePhoneNumber = async (req, res) => {
 
   if (!(recaptcha_token, phone_number && country_id))
     return res.status(400).json({
-      message: "Recaptcha token, Phone number and country id is required",
+      message: "Recaptcha token, Phone number and country id is required"
     })
 
   if (!containsOnlyNumbers(phone_number))
     return res.status(400).json({
-      message: "Phone number must be number",
+      message: "Phone number must be number"
     })
 
   const getCountry = await Country.findById(country_id)
   const otherUser = await User.find({
-    phone_number: getCountry.dial_code + phone_number,
+    phone_number: getCountry.dial_code + phone_number
   })
   if (otherUser.length > 0)
     return res.status(400).json({
-      message: "Phone number is used by another account",
+      message: "Phone number is used by another account"
     })
 
   let country
@@ -207,11 +189,11 @@ const requestChangePhoneNumber = async (req, res) => {
   googleIdentitytoolkit.relyingparty
     .sendVerificationCode({
       phoneNumber: newPhoneNumber,
-      recaptchaToken: recaptcha_token,
+      recaptchaToken: recaptcha_token
     })
     .then((response) => {
       return res.json({
-        session_info: response.data.sessionInfo,
+        session_info: response.data.sessionInfo
       })
     })
     .catch((error) => {
@@ -220,30 +202,31 @@ const requestChangePhoneNumber = async (req, res) => {
 }
 
 const verifyChangePhoneNumber = async (req, res) => {
-  const { session_info, otp_code, country_id, old_phone_number } = req.body
+  const {_id} = req.user
+  const { session_info, otp_code, country_id } = req.body
   if (!(session_info && otp_code && country_id)) {
     return res.status(400).json({
-      message: "Session info, OTP code and Country id is required",
+      message: "Session info, OTP code and Country id is required"
     })
   }
 
   googleIdentitytoolkit.relyingparty
     .verifyPhoneNumber({
       sessionInfo: session_info,
-      code: otp_code,
+      code: otp_code
     })
     .then(async (response) => {
       const { phoneNumber } = response.data
       try {
         await User.updateOne(
-          { _id: req.user._id },
+          { _id },
           { phone_number: phoneNumber, country: country_id }
         )
-        const user = await getUser(req)
+        const user = await User.findById(_id).populate("country")
         return res.json(user)
       } catch (error) {
         return res.status(500).json({
-          message: error,
+          message: error
         })
       }
     })
@@ -251,103 +234,6 @@ const verifyChangePhoneNumber = async (req, res) => {
       return res.status(500).json(error)
     })
 }
-
-// const requestChangePhoneNumber = async (req, res) => {
-//   const { phone_number, country_id } = req.body
-
-//   if (!(phone_number && country_id))
-//     return res.status(400).json({
-//       message: "Phone number and country id is required",
-//     })
-
-//   if (!containsOnlyNumbers(phone_number))
-//     return res.status(400).json({
-//       message: "Phone number must be number",
-//     })
-
-//   const getCountry = await Country.findById(country_id)
-//   const otherUser = await User.find({
-//     phone_number: getCountry.dial_code + phone_number,
-//   })
-//   if (otherUser.length > 0)
-//     return res.status(400).json({
-//       message: "Phone number is used by another account",
-//     })
-
-//   let country
-//   try {
-//     country = await Country.findById(country_id)
-//   } catch (error) {
-//     return res.status(400).json({ message: error })
-//   }
-
-//   const newPhoneNumber = country.dial_code + phone_number
-
-//   const otp_code = otpGenerator.generate(5, {
-//     specialChars: false,
-//     upperCaseAlphabets: false,
-//     lowerCaseAlphabets: false,
-//   })
-
-//   console.log(`Your verifaction code is ${otp_code}`)
-
-//   const hashed_otp = await bcryptjs.hash(otp_code, 10)
-
-//   const token = generatePhoneChangeToken(
-//     newPhoneNumber,
-//     country,
-//     hashed_otp,
-//     "600s"
-//   )
-
-//   return res.json({ token })
-// }
-
-// const verifyChangePhoneNumber = async (req, res) => {
-//   const { token, otp_code } = req.body
-//   if (!(token && otp_code)) {
-//     return res.status(400).json({
-//       message: "Token and OTP Code is required",
-//     })
-//   }
-
-//   jsonwebtoken.verify(
-//     token,
-//     process.env.PHONE_CHANGE_TOKEN_KEY,
-//     async (error, data) => {
-//       if (error) {
-//         return res.status(403).json({
-//           message: error,
-//         })
-//       }
-
-//       const isCorrect = await bcryptjs.compare(otp_code, data.otp_code)
-
-//       if (!isCorrect) {
-//         return res.status(400).json({
-//           message: "Verification code is incorrect",
-//         })
-//       }
-
-//       const { phone_number, country } = data
-
-//       try {
-//         await User.updateOne(
-//           { _id: req.user._id },
-//           { phone_number, country_id: country._id }
-//         )
-//       } catch (error) {
-//         return res.status(500).json({
-//           message: error,
-//         })
-//       }
-
-//       const user = await getUser(req)
-
-//       return res.json(user)
-//     }
-//   )
-// }
 
 export {
   getProfile,
@@ -357,5 +243,5 @@ export {
   removeProfilePicure,
   requestChangePhoneNumber,
   changeUsername,
-  verifyChangePhoneNumber,
+  verifyChangePhoneNumber
 }

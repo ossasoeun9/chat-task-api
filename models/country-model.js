@@ -1,21 +1,26 @@
 import mongoose from "mongoose"
 import mongoosePaginate from "mongoose-paginate-v2"
 
-const country = mongoose.Schema({
-  _id: mongoose.Types.ObjectId,
-  name: {
-    type: String,
+const countrySchema = mongoose.Schema(
+  {
+    _id: mongoose.Types.ObjectId,
+    name: {
+      type: String
+    },
+    code: {
+      type: String,
+      unique: true
+    },
+    dial_code: {
+      type: String
+    }
   },
-  code: {
-    type: String,
-    unique: true,
-  },
-  dial_code: {
-    type: String,
-  },
-})
+  {
+    versionKey: false
+  }
+)
 
-country.plugin(mongoosePaginate)
+countrySchema.plugin(mongoosePaginate)
 
-const Country = mongoose.model("Country", country)
+const Country = mongoose.model("Country", countrySchema)
 export default Country

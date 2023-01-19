@@ -5,7 +5,7 @@ import jsonwebtoken from "jsonwebtoken"
 import { generateUsername } from "unique-username-generator"
 
 import Country from "../models/country-model.js"
-import DeviceLoggin from "../models/device-loggin-model.js"
+import DeviceLogin from "../models/device-login-model.js"
 import User from "../models/user-model.js"
 import {
   generateAccessToken,
@@ -170,7 +170,7 @@ const storeLogin = async (req, userId, token) => {
   const user = userId
   const ip_address = req.headers["x-forwarded-for"]
   const user_agent = req.headers["user-agent"]
-  const oldDevice = await DeviceLoggin.findOne({
+  const oldDevice = await DeviceLogin.findOne({
     ip_address,
     user_agent,
     user,
@@ -181,7 +181,7 @@ const storeLogin = async (req, userId, token) => {
       const resonse = await axios.get(
         `${geoipApi}&ip_address=${ip_address}`
       )
-      await DeviceLoggin.create({
+      await DeviceLogin.create({
         ip_address,
         user_agent,
         geoip: resonse.data,
@@ -193,7 +193,7 @@ const storeLogin = async (req, userId, token) => {
     }
   } else {
     try {
-      await DeviceLoggin.updateOne(
+      await DeviceLogin.updateOne(
         { _id: oldDevice._id },
         { token, loggin_time: Date.now() }
       )

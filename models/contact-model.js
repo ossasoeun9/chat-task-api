@@ -2,14 +2,15 @@ import mongoose from "mongoose"
 import mongoosePaginate from "mongoose-paginate-v2"
 import User from "./user-model.js"
 
-const contact = mongoose.Schema(
+const contactSchema = mongoose.Schema(
   {
     phone_number: {
       type: String,
-      default: null
+      required: true,
     },
     owner: {
       type: mongoose.Types.ObjectId,
+      required: true,
       ref: User
     },
     first_name: {
@@ -29,21 +30,31 @@ const contact = mongoose.Schema(
     timestamps: {
       createdAt: "created_at",
       updatedAt: "updated_at"
-    }
+    },
+    versionKey: false
   }
 )
 
-contact.virtual("user", {
+contactSchema.index({ owner: 1, phone_number: 1 }, { unique: true })
+
+contactSchema.virtual("user", {
   ref: User,
   localField: "phone_number",
   foreignField: "phone_number",
   justOne: true
 })
 
-contact.set("toObject", { virtuals: true })
-contact.set("toJSON", { virtuals: true })
+contactSchema.set("toObject", { virtuals: true })
+contactSchema.set("toJSON", {
+  virtuals: true,
+  transform: (doc, ret, _) => {
+    delete ret.id
+    delete ret.__v
+    return ret
+  }
+})
 
-contact.plugin(mongoosePaginate)
+contactSchema.plugin(mongoosePaginate)
 
-const Contact = mongoose.model("Contact", contact)
+const Contact = mongoose.model("Contact", contactSchema)
 export default Contact

@@ -1,10 +1,10 @@
 import express from "express"
 import {
   blockContact,
-  createContact,
+  createOrEditContact,
   deleteContact,
-  editContact,
   getBlockedContacts,
+  getContactDetail,
   getContacts,
   syncContacts
 } from "../controllers/contact-controller.js"
@@ -12,9 +12,9 @@ import {
 const router = express.Router()
 
 router.get("/", getContacts)
-router.post("/create", createContact)
+router.get("/:id", getContactDetail)
+router.post("/create-or-edit", createOrEditContact)
 router.post("/sync", syncContacts)
-router.post("/edit/:id", editContact)
 router.delete("/delete/:id", deleteContact)
 router.delete("/block-or-unblock/:id", blockContact)
 router.get("/blocked", getBlockedContacts)
