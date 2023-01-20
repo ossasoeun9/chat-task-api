@@ -11,6 +11,7 @@ import userRoute from "./routes/user-route.js"
 import authRoute from "./routes/auth-route.js"
 import deviceRoute from "./routes/device-route.js"
 import contactRoute from "./routes/contact-route.js"
+import chatRoomRoute from "./routes/chat-room-route.js"
 
 dotenv.config()
 connectDB()
@@ -36,6 +37,8 @@ app.use(verifyToken)
 app.use("/users", userRoute)
 app.use("/device-login", deviceRoute)
 app.use("/contacts", contactRoute)
+app.use("/chat-rooms", chatRoomRoute)
+
 const port = process.env.PORT || 3000
 app.listen(port, () => {
   console.log(`ChatTask app listening on port ${port}!`)

@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import Message from "./message-model.js"
 import User from "./user-model.js"
 
 /*
@@ -17,10 +18,11 @@ const chatRoomSchema = mongoose.Schema(
     },
     admin: {
       type: mongoose.Types.ObjectId,
-      ref: User
+      ref: User,
+      default: null
     },
     type: {
-      type: String,
+      type: Number,
       enum: [1, 2, 3, 4]
     },
     description: {
@@ -28,18 +30,34 @@ const chatRoomSchema = mongoose.Schema(
       default: null
     },
     latest_message: {
-      type: String,
-      required: true
-    }
+      type: mongoose.Types.ObjectId,
+      ref: Message,
+      default: null
+    },
+    members: [{ type: mongoose.Types.ObjectId, ref: User }]
   },
   {
     timestamps: {
       createdAt: "created_at",
       updatedAt: "updated_at"
     },
-    versionKey: false
+    versionKey: false,
   }
 )
+
+chatRoomSchema.set("toJSON", {
+  transform: (doc, ret, opt) => {
+    console.log(doc)
+    const { type } = ret
+    if (type == 2 || type == 1) {
+      delete ret.admin
+      delete ret.name
+      delete ret.description
+      delete ret.created_at
+    }
+    return ret
+  }
+})
 
 const ChatRoom = mongoose.model("Chat Room", chatRoomSchema)
 export default ChatRoom
