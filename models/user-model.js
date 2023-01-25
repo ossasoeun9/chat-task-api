@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import dotenv from "dotenv"
 import mongoosePaginate from "mongoose-paginate-v2"
 import Country from "./country-model.js"
+import mongooseAutoPopulate from "mongoose-autopopulate"
 
 dotenv.config()
 const apiHost = process.env.API_HOST
@@ -21,7 +22,8 @@ const userSchema = mongoose.Schema(
     country: {
       type: mongoose.Types.ObjectId,
       ref: Country,
-      required: true
+      required: true,
+      auto_populate: true,
     },
     first_name: {
       type: String,
@@ -64,6 +66,8 @@ userSchema.set("toJSON", {
     return ret
   }
 })
+
+userSchema.plugin(mongooseAutoPopulate)
 
 const User = mongoose.model("User", userSchema)
 export default User

@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import mongoosePaginate from "mongoose-paginate-v2"
 
 const voiceSchema = mongoose.Schema(
   {
@@ -14,6 +15,8 @@ const voiceSchema = mongoose.Schema(
     versionKey: false
   }
 )
+
+voiceSchema.plugin(mongoosePaginate)
 
 const Voice = mongoose.model('Voice', voiceSchema)
 export default Voice

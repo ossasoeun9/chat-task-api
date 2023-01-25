@@ -4,10 +4,15 @@ import messageValidator from "../utils/message-validator.js"
 
 const getChatRoom = async (req, res) => {
   const { _id } = req.user
-  const chats = await ChatRoom.find({ members: _id })
-    .populate("latest_message")
-    .sort("updated_at")
-  return res.json(chats)
+  const { page = 1, limit = 10 } = req.query
+
+  try {
+    const chats = await ChatRoom.paginate({members: _id}, {page, limit})
+
+    return res.json(chats)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
 }
 
 const createChatRoom = async (req, res) => {

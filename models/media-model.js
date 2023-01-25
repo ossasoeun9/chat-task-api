@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import mongoosePaginate from "mongoose-paginate-v2"
 
 const mediaSchema = mongoose.Schema(
   {
@@ -15,6 +16,9 @@ const mediaSchema = mongoose.Schema(
     versionKey: false
   }
 )
+
+mediaSchema.plugin(mongoosePaginate)
+mongoose.plugin(mongoosePaginate)
 
 const Media = mongoose.model('Media', mediaSchema)
 export default Media

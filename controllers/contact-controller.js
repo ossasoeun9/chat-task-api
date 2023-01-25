@@ -5,17 +5,19 @@ const hideUserFiled = "-created_at -country"
 
 const getContacts = async (req, res) => {
   const { contact_ids } = req.body
+  const { page = 1, limit = 10 } = req.query
 
   if (contact_ids) {
     const ids = JSON.parse(contact_ids)
     try {
-      const contacts = await Contact.find({
-        owner: req.user._id,
-        is_blocked: false,
-        _id: { $in: ids }
-      })
-        .select(hideContactFiled)
-        .populate("user", hideUserFiled)
+      const contacts = await Contact.paginate(
+        {
+          owner: req.user._id,
+          is_blocked: false,
+          _id: { $in: ids }
+        },
+        { page, limit, populate: "user'" }
+      )
       return res.json(contacts)
     } catch (error) {
       return res.status(500).json({
@@ -25,12 +27,13 @@ const getContacts = async (req, res) => {
   }
 
   try {
-    const contacts = await Contact.find({
-      owner: req.user._id,
-      is_blocked: false
-    })
-      .select(hideContactFiled)
-      .populate("user", hideUserFiled)
+    const contacts = await Contact.paginate(
+      {
+        owner: req.user._id,
+        is_blocked: false
+      },
+      { page, limit, populate: "user" }
+    )
     return res.json(contacts)
   } catch (error) {
     return res.status(500).json({

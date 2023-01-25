@@ -3,6 +3,7 @@ import dotenv from "dotenv"
 import formData from "express-form-data"
 import os from "os"
 
+import pigConfig from "./configs/pagination-config.js"
 import createDir from "./configs/dir-config.js"
 import connectDB from "./configs/db-config.js"
 import verifyToken from "./middlewares/auth-middleware.js"
@@ -16,16 +17,17 @@ import chatRoomRoute from "./routes/chat-room-route.js"
 dotenv.config()
 connectDB()
 createDir()
+pigConfig()
 
 const options = {
   uploadDir: os.tmpdir(),
-  autoClean: true,
+  autoClean: true
 }
 
 const app = express()
 
 app.use(express.json())
-app.use(express.urlencoded({extended: false}))
+app.use(express.urlencoded({ extended: false }))
 app.use(formData.parse(options))
 
 app.use("/country", phoneCodeRoute)

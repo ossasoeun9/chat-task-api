@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import mongooseAutoPopulate from "mongoose-autopopulate"
 import { UAParser } from "ua-parser-js"
 import User from "./user-model.js"
 
@@ -14,7 +15,8 @@ const deviceLogginSchema = mongoose.Schema(
     user: {
       type: mongoose.Types.ObjectId,
       ref: User,
-      select: false
+      select: false,
+      autopopulate: true,
     },
     token: {
       type: Object,
@@ -41,6 +43,8 @@ deviceLogginSchema.set("toJSON", {
     return ret
   }
 })
+
+deviceLogginSchema.plugin(mongooseAutoPopulate)
 
 const DeviceLogin = mongoose.model("device logins", deviceLogginSchema)
 export default DeviceLogin

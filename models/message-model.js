@@ -4,6 +4,7 @@ import Media from "./media-model.js"
 import User from "./user-model.js"
 import Url from "./url-model.js"
 import Voice from "./voice-model.js"
+import mongooseAutoPopulate from "mongoose-autopopulate"
 
 /*
 Note
@@ -21,7 +22,8 @@ const messageSchema = mongoose.Schema(
     sender: {
       type: mongoose.Types.ObjectId,
       ref: User,
-      required: true
+      required: true,
+      autopopulate: true
     },
     ref_message: {
       type: mongoose.Types.ObjectId,
@@ -79,6 +81,8 @@ messageSchema.set("toJSON", {
     return ret
   }
 })
+
+messageSchema.plugin(mongooseAutoPopulate)
 
 const Message = mongoose.model("Message", messageSchema)
 export default Message

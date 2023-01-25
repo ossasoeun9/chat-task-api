@@ -20,6 +20,7 @@
     "express-form-data": "^2.0.19",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^6.8.3",
+    "mongoose-autopopulate": "^0.17.1",
     "mongoose-paginate-v2": "^1.7.1",
     "otp-generator": "^4.0.0",
     "ua-parser-js": "^1.0.32",

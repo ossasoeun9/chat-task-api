@@ -41,7 +41,7 @@ contactSchema.virtual("user", {
   ref: User,
   localField: "phone_number",
   foreignField: "phone_number",
-  justOne: true
+  justOne: true,
 })
 
 contactSchema.set("toObject", { virtuals: true })

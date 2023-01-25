@@ -1,6 +1,8 @@
 import mongoose from "mongoose"
 import Message from "./message-model.js"
 import User from "./user-model.js"
+import mongoosePaginate from "mongoose-paginate-v2"
+import mongooseAutoPopulate from "mongoose-autopopulate"
 
 /*
 Note
@@ -19,7 +21,8 @@ const chatRoomSchema = mongoose.Schema(
     admin: {
       type: mongoose.Types.ObjectId,
       ref: User,
-      default: null
+      default: null,
+      autopopulate: true
     },
     type: {
       type: Number,
@@ -32,32 +35,37 @@ const chatRoomSchema = mongoose.Schema(
     latest_message: {
       type: mongoose.Types.ObjectId,
       ref: Message,
-      default: null
+      default: null,
+      autopopulate: true
     },
-    members: [{ type: mongoose.Types.ObjectId, ref: User }]
+    members: [{ type: mongoose.Types.ObjectId, ref: User, autopopulate: true }]
   },
   {
     timestamps: {
       createdAt: "created_at",
       updatedAt: "updated_at"
     },
-    versionKey: false,
+    versionKey: false
   }
 )
 
 chatRoomSchema.set("toJSON", {
   transform: (doc, ret, opt) => {
-    console.log(doc)
     const { type } = ret
     if (type == 2 || type == 1) {
       delete ret.admin
       delete ret.name
       delete ret.description
       delete ret.created_at
+    } else {
+      delete ret.members
     }
     return ret
   }
 })
+
+chatRoomSchema.plugin(mongooseAutoPopulate)
+chatRoomSchema.plugin(mongoosePaginate)
 
 const ChatRoom = mongoose.model("Chat Room", chatRoomSchema)
 export default ChatRoom
