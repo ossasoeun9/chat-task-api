@@ -139,7 +139,34 @@ const createGroupChat = async (req, res) => {
 }
 
 const editChatRoom = async (req, res) => {
-  res.send("Edit Chat Room")
+  const {_id} = req.user
+  const roomId = req.params.id
+  const room = await ChatRoom.findById(roomId)
+  if (!room.admin) {
+    return res.status(400).json({
+      message: "Room is not a group"
+    })
+  }
+
+  if (room.admin.id != _id) {
+    return res.json({
+      message: "Can't update, permission denind"
+    })
+  }
+
+  const {name, description} = req.body
+  if (!name) {
+    return res.status(400).json({
+      name: "Name is required"
+    })
+  }
+
+  room.name = name
+  room.description = description || room.description
+  await room.save()
+  const roomUpdated = await ChatRoom.findById(roomId)
+
+  return res.json(roomUpdated)
 }
 
 const muteOrUnmute = async (req, res) => {
