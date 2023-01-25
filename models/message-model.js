@@ -5,6 +5,7 @@ import User from "./user-model.js"
 import Url from "./url-model.js"
 import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
+import ChatRoom from "./chat-room-model.js"
 
 /*
 Note
@@ -85,4 +86,15 @@ messageSchema.set("toJSON", {
 messageSchema.plugin(mongooseAutoPopulate)
 
 const Message = mongoose.model("Message", messageSchema)
+
+Message.watch().on("change", async (data)  => {
+  const { fullDocument } = data
+  await ChatRoom.updateOne(
+    { _id: fullDocument.room },
+    {
+      latest_message: fullDocument._id
+    }
+  )
+})
+
 export default Message

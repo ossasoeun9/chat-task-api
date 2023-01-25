@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose, { Schema } from "mongoose"
 import Message from "./message-model.js"
 import User from "./user-model.js"
 import mongoosePaginate from "mongoose-paginate-v2"
@@ -38,6 +38,7 @@ const chatRoomSchema = mongoose.Schema(
       default: null,
       autopopulate: true
     },
+    people: [{ type: mongoose.Types.ObjectId, ref: User, default: null, autopopulate: true }],
     members: [{ type: mongoose.Types.ObjectId, ref: User, autopopulate: true }]
   },
   {
@@ -58,7 +59,7 @@ chatRoomSchema.set("toJSON", {
       delete ret.description
       delete ret.created_at
     } else {
-      delete ret.members
+      delete ret.people
     }
     return ret
   }

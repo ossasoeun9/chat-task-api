@@ -1,5 +1,6 @@
 import ChatRoom from "../models/chat-room-model.js"
 import Message from "../models/message-model.js"
+import User from "../models/user-model.js"
 import messageValidator from "../utils/message-validator.js"
 
 const getChatRoom = async (req, res) => {
@@ -7,9 +8,24 @@ const getChatRoom = async (req, res) => {
   const { page = 1, limit = 10 } = req.query
 
   try {
-    const chats = await ChatRoom.paginate({members: _id}, {page, limit})
+    const chats = await ChatRoom.paginate(
+      { $or: [{ members: _id }, { people: _id }] },
+      { select: "-members", page, limit }
+    )
+
+    chats.data.map((value) => {})
 
     return res.json(chats)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
+}
+
+const getChatRoomDetail = async (req, res) => {
+  try {
+    const room = await ChatRoom.findOne({ _id: req.params.id })
+
+    return res.json(room)
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -42,9 +58,9 @@ const ceateTwoPeopleRoom = async (req, res) => {
     return res.status(400).json({ message: "Receiver is required" })
   }
 
-  const room0 = await ChatRoom.findOne({ members: [sender, receiver] })
-    .populate("members", "-country -created_at -updated_at")
-    .populate("latest_message")
+  const room0 = await ChatRoom.findOne({ people: [sender, receiver] }).select(
+    "-members"
+  )
 
   if (room0) {
     return res.json(room0)
@@ -61,18 +77,15 @@ const ceateTwoPeopleRoom = async (req, res) => {
   try {
     const { _id } = await ChatRoom.create({
       type: 2,
-      members: [sender, receiver]
+      people: [sender, receiver]
     })
-    const newMessage = await Message.create({
+    await Message.create({
       sender,
       room: _id,
       type: message_type,
       text: text
     })
-    await ChatRoom.updateOne({ _id }, { latest_message: newMessage._id })
-    const room2 = await ChatRoom.findById(_id)
-      .populate("members", "-country -created_at -updated_at")
-      .populate("latest_message")
+    const room2 = await ChatRoom.findById(_id).select("-members")
     return res.json(room2)
   } catch (error) {
     return res.status(500).json({
@@ -114,22 +127,15 @@ const createGroupChat = async (req, res) => {
       admin: userId,
       name
     })
-    const newMessage = await Message.create({
+    await Message.create({
       sender: userId,
       room: _id,
       type: 1,
       text: "Created this group"
     })
-    await ChatRoom.updateOne(
-      { _id },
-      {
-        latest_message: newMessage._id
-      }
-    )
     const room2 = await ChatRoom.findById(_id)
-      .select("-created_at -updated_at")
-      .populate("members", "-country -created_at")
-      .populate("latest_message")
+      .select("-people -members")
+      .select("-members")
     return res.json(room2)
   } catch (error) {
     return res.status(500).json({
@@ -139,9 +145,9 @@ const createGroupChat = async (req, res) => {
 }
 
 const editChatRoom = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
   const roomId = req.params.id
-  const room = await ChatRoom.findById(roomId)
+  const room = await ChatRoom.findById(roomId).select("addmin name description")
   if (!room.admin) {
     return res.status(400).json({
       message: "Room is not a group"
@@ -154,7 +160,7 @@ const editChatRoom = async (req, res) => {
     })
   }
 
-  const {name, description} = req.body
+  const { name, description } = req.body
   if (!name) {
     return res.status(400).json({
       name: "Name is required"
@@ -164,7 +170,7 @@ const editChatRoom = async (req, res) => {
   room.name = name
   room.description = description || room.description
   await room.save()
-  const roomUpdated = await ChatRoom.findById(roomId)
+  const roomUpdated = await ChatRoom.findById(roomId).select("-people -members")
 
   return res.json(roomUpdated)
 }
@@ -174,15 +180,170 @@ const muteOrUnmute = async (req, res) => {
 }
 
 const addMembers = async (req, res) => {
-  res.send("Add members")
+  const { _id } = req.user
+  const roomId = req.params.id
+  const room = await ChatRoom.findById(roomId).select("admin")
+  if (!room.admin) {
+    return res.status(400).json({
+      message: "Room is not a group"
+    })
+  }
+
+  // if (room.admin.id != _id) {
+  //   return res.json({
+  //     message: "Can't update, permission denind"
+  //   })
+  // }
+
+  const { members } = req.body
+
+  if (!members) {
+    return res.status(400).json({
+      message: "Member is required"
+    })
+  }
+  const membersJson = JSON.parse(members)
+  // membersJson.pop(room.members)
+
+  try {
+    await ChatRoom.updateOne(
+      { _id: roomId },
+      { $addToSet: { members: membersJson } }
+    )
+    const user = await User.findById(_id).select("username")
+    const membersObject = await User.find({ _id: { $in: membersJson } }).select(
+      "username"
+    )
+    const messages = membersObject.map((v) => {
+      return {
+        type: 1,
+        text: `@${user.username} added @${v.username} to this group`,
+        room: roomId,
+        sender: _id
+      }
+    })
+    if (messages.length > 0) {
+      await Message.insertMany(messages)
+    }
+    const newRoom = await ChatRoom.findById(roomId).select("-members")
+    return res.json(newRoom)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
 }
 
 const removeMembers = async (req, res) => {
-  res.send("Remove members")
+  const { _id } = req.user
+  const roomId = req.params.id
+  const room = await ChatRoom.findById(roomId).select("admin")
+  if (!room.admin) {
+    return res.status(400).json({
+      message: "Room is not a group"
+    })
+  }
+
+  if (room.admin.id != _id) {
+    return res.json({
+      message: "Can't update, permission denind"
+    })
+  }
+
+  const { members } = req.body
+
+  if (!members) {
+    return res.status(400).json({
+      message: "Member is required"
+    })
+  }
+  const membersJson = JSON.parse(members)
+
+  try {
+    await ChatRoom.updateOne(
+      { _id: roomId },
+      { $pullAll: { members: membersJson } }
+    )
+    const user = await User.findById(_id).select("username")
+    const membersObject = await User.find({ _id: { $in: membersJson } }).select(
+      "username"
+    )
+    const messages = membersObject.map((v) => {
+      return {
+        type: 1,
+        text: `@${user.username} removed @${v.username} from this group`,
+        room: roomId,
+        sender: _id
+      }
+    })
+    if (messages.length > 0) {
+      await Message.insertMany(messages)
+    }
+    const newRoom = await ChatRoom.findById(roomId).select("-members")
+    return res.json(newRoom)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
+}
+
+const joinChatRoom = async (req, res) => {
+  const { _id } = req.user
+  const roomId = req.params.id
+  if (!roomId) {
+    return res.status(400).json({
+      message: "Room ID is required"
+    })
+  }
+  try {
+    const myRoom = await ChatRoom.findById(roomId).select("-members")
+    if (myRoom) return res.json(myRoom)
+    await ChatRoom.updateOne({ _id: roomId }, { $addToSet: { members: [_id] } })
+    const user = await User.findById(_id)
+    const ss = await Message.create({
+      sender: user.id,
+      type: 1,
+      room: roomId,
+      text: `@${user.username} has joined this group`
+    })
+    const room = await ChatRoom.findById(roomId).select("-members")
+    return res.json(room)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
 }
 
 const leaveChatRoom = async (req, res) => {
-  res.send("Leave Chat Room")
+  const { _id } = req.user
+  const roomId = req.params.id
+  if (!roomId) {
+    return res.status(400).json({
+      message: "Room ID is required"
+    })
+  }
+  try {
+    const room = await ChatRoom.findById(roomId).select("-members")
+
+    if (room && room.admin == _id) {
+      await room.delete()
+      await Message.deleteMany({ room: roomId })
+      return res.json({
+        message: "Room was delete successfully"
+      })
+    }
+    await ChatRoom.updateOne(
+      { _id: roomId },
+      { $pull: { members: { $in: [_id] } } }
+    )
+    const user = await User.findById(_id)
+    await Message.create({
+      sender: user.id,
+      type: 1,
+      room: roomId,
+      text: `@${user.username} has leaved this group`
+    })
+    const room2 = await ChatRoom.findById(roomId).select("-members")
+    return res.json(room2)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
 }
 
 const setChatRommProfile = async (req, res) => {
@@ -199,12 +360,14 @@ const deleteChatRoom = async (req, res) => {
 
 export {
   getChatRoom,
+  getChatRoomDetail,
   createChatRoom,
   editChatRoom,
   muteOrUnmute,
   addMembers,
   removeMembers,
   deleteChatRoom,
+  joinChatRoom,
   leaveChatRoom,
   setChatRommProfile,
   removeChatRoomProfile

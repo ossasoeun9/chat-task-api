@@ -133,6 +133,7 @@ const removeProfilePicure = async (req, res) => {
 }
 
 const changeUsername = async (req, res) => {
+  const {_id} = req.user
   const { username } = req.body
 
   if (!username)
@@ -145,7 +146,7 @@ const changeUsername = async (req, res) => {
     return res.status(400).json("Username is already in used")
 
   try {
-    await User.updateOne({ _id: req.user._id }, { username })
+    await User.updateOne({ _id }, { username })
     const user = await User.findById(_id).populate("country")
     return res.json(user)
   } catch (error) {
