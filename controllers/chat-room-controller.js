@@ -1,7 +1,11 @@
+import path from "path"
+import fs from "fs"
+import { randomBytes } from "crypto"
 import ChatRoom from "../models/chat-room-model.js"
 import Message from "../models/message-model.js"
 import User from "../models/user-model.js"
 import messageValidator from "../utils/message-validator.js"
+import MutedChatRoom from "../models/muted-chat-room-model.js"
 
 const getChatRoom = async (req, res) => {
   const { _id } = req.user
@@ -9,11 +13,15 @@ const getChatRoom = async (req, res) => {
 
   try {
     const chats = await ChatRoom.paginate(
-      { $or: [{ members: _id }, { people: _id }] },
-      { select: "-members", page, limit }
+      { $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }] },
+      {
+        select: "-members",
+        sort: { "latest_message.updated_at": 1 },
+        page,
+        limit
+      }
     )
-
-    chats.data.map((value) => {})
+    // const chats =  await ChatRoom.find()
 
     return res.json(chats)
   } catch (error) {
@@ -58,9 +66,9 @@ const ceateTwoPeopleRoom = async (req, res) => {
     return res.status(400).json({ message: "Receiver is required" })
   }
 
-  const room0 = await ChatRoom.findOne({ people: [sender, receiver] }).select(
-    "-members"
-  )
+  const room0 = await ChatRoom.findOne({
+    people: [sender, receiver]
+  }).select("-members")
 
   if (room0) {
     return res.json(room0)
@@ -85,7 +93,9 @@ const ceateTwoPeopleRoom = async (req, res) => {
       type: message_type,
       text: text
     })
-    const room2 = await ChatRoom.findById(_id).select("-members")
+    const room2 = await ChatRoom.findOne({
+      people: [sender, receiver]
+    }).select("-members")
     return res.json(room2)
   } catch (error) {
     return res.status(500).json({
@@ -176,7 +186,33 @@ const editChatRoom = async (req, res) => {
 }
 
 const muteOrUnmute = async (req, res) => {
-  res.send("Mute or unmute")
+  const { _id } = req.user
+  const roomId = req.params.id
+  const room = await ChatRoom.findById(roomId)
+  if (!room) {
+    return res.status(400).json({
+      message: "Invalid id"
+    })
+  }
+  try {
+    const data = await MutedChatRoom.findOne({ room: roomId, user: _id })
+    if (data) {
+      await data.delete()
+      return res.json({
+        message: "Unmuted"
+      })
+    } else {
+      await MutedChatRoom.create({
+        room: roomId,
+        user: _id
+      })
+      return res.json({
+        message: "Muted"
+      })
+    }
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
 }
 
 const addMembers = async (req, res) => {
@@ -293,11 +329,13 @@ const joinChatRoom = async (req, res) => {
     })
   }
   try {
-    const myRoom = await ChatRoom.findById(roomId).select("-members")
+    const myRoom = await ChatRoom.findOne({ _id: roomId, members: _id }).select(
+      "-members"
+    )
     if (myRoom) return res.json(myRoom)
     await ChatRoom.updateOne({ _id: roomId }, { $addToSet: { members: [_id] } })
     const user = await User.findById(_id)
-    const ss = await Message.create({
+    await Message.create({
       sender: user.id,
       type: 1,
       room: roomId,
@@ -347,15 +385,75 @@ const leaveChatRoom = async (req, res) => {
 }
 
 const setChatRommProfile = async (req, res) => {
-  res.send("Set Chat Room Profile")
+  const roomId = req.params.id
+  const { profile } = req.files
+
+  if (!profile)
+    return res.status(400).json({
+      message: "Profile is required"
+    })
+
+  const dir = `storage/group-profile/${roomId}/`
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir)
+  }
+
+  const filename =
+    Date.now() +
+    "." +
+    randomBytes(6).toString("hex") +
+    path.extname(profile.originalFilename)
+
+  const fullPath = path.normalize(`${dir}/${filename}`)
+  try {
+    // delete old image
+    const oldRoom = await ChatRoom.findById(roomId)
+    if (oldRoom.profile_url) {
+      const deleteFullPath = dir + oldRoom.profile_url
+      fs.unlinkSync(deleteFullPath)
+    }
+
+    // read
+    const content = fs.readFileSync(profile.path)
+
+    // write
+    fs.writeFileSync(fullPath, content)
+    await ChatRoom.updateOne({ _id: roomId }, { profile_url: filename })
+
+    // clear tmp dir
+    fs.unlinkSync(profile.path)
+
+    const newRoom = await ChatRoom.findById(roomId).select("-members")
+    return res.json(newRoom)
+  } catch (error) {
+    return res.status(500).json({
+      message: error
+    })
+  }
 }
 
 const removeChatRoomProfile = async (req, res) => {
-  res.send("Remove Chat Room Profile")
-}
+  const roomId = req.params.id
+  const oldRoom = await ChatRoom.findById(roomId)
+  const { profile_url } = oldRoom
+  if (!profile_url)
+    return res.status(400).json({
+      message: "Profile was deleted"
+    })
 
-const deleteChatRoom = async (req, res) => {
-  res.send("Delete chat room")
+  try {
+    await ChatRoom.updateOne({ _id: roomId }, { profile_url: null })
+    fs.unlinkSync(`storage/group-profile/${roomId}/${profile_url}`)
+  } catch (error) {
+    return res.status(500).json({
+      message: error
+    })
+  }
+
+  return res.json({
+    message: "Profile is deleted successfuly"
+  })
 }
 
 export {
@@ -366,7 +464,6 @@ export {
   muteOrUnmute,
   addMembers,
   removeMembers,
-  deleteChatRoom,
   joinChatRoom,
   leaveChatRoom,
   setChatRommProfile,

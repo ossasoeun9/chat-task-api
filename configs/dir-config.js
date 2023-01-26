@@ -8,6 +8,9 @@ const createDir = () => {
     if (!fs.existsSync("storage/user-profile")) {
       fs.mkdirSync("storage/user-profile")
     }
+    if (!fs.existsSync("storage/group-profile")) {
+      fs.mkdirSync("storage/group-profile")
+    }
   } catch (err) {
     console.log(err)
   }

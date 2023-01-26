@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose"
+import mongoose from "mongoose"
 import Message from "./message-model.js"
 import User from "./user-model.js"
 import mongoosePaginate from "mongoose-paginate-v2"
@@ -12,9 +12,13 @@ Note
 4 is public group
 */
 
-const chatRoomSchema = mongoose.Schema(
+const chatRoomSchema = new mongoose.Schema(
   {
     name: {
+      type: String,
+      default: null
+    },
+    profile_url: {
       type: String,
       default: null
     },
@@ -38,7 +42,14 @@ const chatRoomSchema = mongoose.Schema(
       default: null,
       autopopulate: true
     },
-    people: [{ type: mongoose.Types.ObjectId, ref: User, default: null, autopopulate: true }],
+    people: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: User,
+        default: null,
+        autopopulate: true
+      }
+    ],
     members: [{ type: mongoose.Types.ObjectId, ref: User, autopopulate: true }]
   },
   {
@@ -50,20 +61,56 @@ const chatRoomSchema = mongoose.Schema(
   }
 )
 
+chatRoomSchema.post("find", function () {
+  const { $or } = this.getQuery()
+  if ($or && $or[0] && $or[0].people) {
+    chatRoomSchema.virtual("person").get(function () {
+      const { type } = this
+      if (type == 2) {
+        for (var p in this.people) {
+          const person = this.people[p]
+          if (person._id.valueOf() != $or[0].people.$in[0].valueOf()) {
+            return person
+          }
+        }
+      }
+    })
+  }
+})
+
+chatRoomSchema.post("findOne", function () {
+  const { people } = this.getQuery()
+  if (people && people[0]) {
+    chatRoomSchema.virtual("person").get(function () {
+      const { type } = this
+      if (type == 2) {
+        for (var p in this.people) {
+          const person = this.people[p]
+          if (person._id.valueOf() != people[0].valueOf()) {
+            return person
+          }
+        }
+      }
+    })
+  }
+})
+
 chatRoomSchema.set("toJSON", {
   transform: (doc, ret, opt) => {
     const { type } = ret
+    delete ret.people
     if (type == 2 || type == 1) {
       delete ret.admin
       delete ret.name
       delete ret.description
       delete ret.created_at
-    } else {
-      delete ret.people
     }
     return ret
-  }
+  },
+  virtuals: true
 })
+
+chatRoomSchema.set("toObject", { virtuals: true })
 
 chatRoomSchema.plugin(mongooseAutoPopulate)
 chatRoomSchema.plugin(mongoosePaginate)
