@@ -12,6 +12,8 @@ Note
 4 is public group
 */
 
+let userId
+
 const chatRoomSchema = new mongoose.Schema(
   {
     name: {
@@ -50,6 +52,13 @@ const chatRoomSchema = new mongoose.Schema(
         autopopulate: true
       }
     ],
+    muted_by: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: User,
+        default: null
+      }
+    ],
     members: [{ type: mongoose.Types.ObjectId, ref: User, autopopulate: true }]
   },
   {
@@ -61,49 +70,27 @@ const chatRoomSchema = new mongoose.Schema(
   }
 )
 
-chatRoomSchema.post("find", function () {
-  const { $or } = this.getQuery()
-  if ($or && $or[0] && $or[0].people) {
-    chatRoomSchema.virtual("person").get(function () {
-      const { type } = this
-      if (type == 2) {
-        for (var p in this.people) {
-          const person = this.people[p]
-          if (person._id.valueOf() != $or[0].people.$in[0].valueOf()) {
-            return person
-          }
-        }
-      }
-    })
-  }
-})
-
-chatRoomSchema.post("findOne", function () {
-  const { people } = this.getQuery()
-  if (people && people[0]) {
-    chatRoomSchema.virtual("person").get(function () {
-      const { type } = this
-      if (type == 2) {
-        for (var p in this.people) {
-          const person = this.people[p]
-          if (person._id.valueOf() != people[0].valueOf()) {
-            return person
-          }
-        }
-      }
-    })
-  }
+chatRoomSchema.virtual("is_muted").get(function() {
+  const { muted_by } = this
+  const isMuted = muted_by.map((v) => v.valueOf()).indexOf(userId) != -1
+  return isMuted
 })
 
 chatRoomSchema.set("toJSON", {
   transform: (doc, ret, opt) => {
-    const { type } = ret
+    const { type, people } = ret
+    delete ret.muted_by
     delete ret.people
+    delete ret.id
     if (type == 2 || type == 1) {
       delete ret.admin
       delete ret.name
       delete ret.description
-      delete ret.created_at
+    }
+    if (type == 2 && people.length == 2) {
+      const indexOfPerson =
+        people.map((v) => v._id.valueOf()).indexOf(userId) == 0 ? 1 : 0
+      ret.person = people[indexOfPerson]
     }
     return ret
   },
@@ -114,6 +101,10 @@ chatRoomSchema.set("toObject", { virtuals: true })
 
 chatRoomSchema.plugin(mongooseAutoPopulate)
 chatRoomSchema.plugin(mongoosePaginate)
-
 const ChatRoom = mongoose.model("Chat Room", chatRoomSchema)
+ChatRoom.user = (newUserId) => {
+  userId = newUserId
+  return ChatRoom
+}
+
 export default ChatRoom

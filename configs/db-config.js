@@ -16,4 +16,6 @@ const connectDB = async () => {
   }
 }
 
+// mongoose.connection.on("error", console.error.bind(console, 'connection error:'))
+
 export default connectDB
