@@ -4,7 +4,11 @@ import mongoosePaginate from "mongoose-paginate-v2"
 const urlSchema = mongoose.Schema(
   {
     link: String,
-    is_preview: Boolean
+    is_preview: Boolean,
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    }
   },
   {
     timestamps: {

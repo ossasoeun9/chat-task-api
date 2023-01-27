@@ -140,11 +140,12 @@ const createGroupChat = async (req, res) => {
       admin: userId,
       name
     })
+    const user = await User.findById(userId).select("username")
     await Message.create({
       sender: userId,
       room: _id,
       type: 1,
-      text: "Created this group"
+      text: `${user.username} created this group`
     })
     const room2 = await ChatRoom.user(userId)
       .findById(_id)

@@ -55,19 +55,19 @@ const userSchema = mongoose.Schema(
   }
 )
 
-userSchema.plugin(mongoosePaginate)
-
 userSchema.set("toJSON", {
   transform: (_, ret, __) => {
     const { _id, profile_url } = ret
+    delete ret.id
     if (profile_url) {
       ret.profile_url = `${apiHost}/user-profile/${_id}/${profile_url}`
     }
     return ret
-  }
+  },
 })
 
 userSchema.plugin(mongooseAutoPopulate)
+userSchema.plugin(mongoosePaginate)
 
 const User = mongoose.model("User", userSchema)
 export default User

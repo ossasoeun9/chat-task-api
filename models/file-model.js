@@ -5,6 +5,10 @@ const fileSchema = mongoose.Schema(
   {
     url: String,
     size: Number,
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    }
   },
   {
     timestamps: {
@@ -17,5 +21,5 @@ const fileSchema = mongoose.Schema(
 
 mongoose.plugin(mongoosePaginate)
 
-const FileDB = mongoose.model('File DB', fileSchema)
+const FileDB = mongoose.model("File DB", fileSchema)
 export default FileDB

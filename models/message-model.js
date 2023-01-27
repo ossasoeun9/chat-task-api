@@ -7,6 +7,8 @@ import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import ChatRoom from "./chat-room-model.js"
 
+let userId
+
 /*
 Note
 1 is activity message
@@ -24,12 +26,15 @@ const messageSchema = mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: User,
       required: true,
-      autopopulate: true
+      autopopulate: {
+        select: "_id first_name last_name profile_url is_online"
+      }
     },
     ref_message: {
       type: mongoose.Types.ObjectId,
       ref: "Message",
-      default: null
+      default: null,
+      autopopulate: true
     },
     room: {
       type: mongoose.Types.ObjectId,
@@ -79,6 +84,11 @@ messageSchema.set("toJSON", {
     if (ret.url == null) {
       delete ret.url
     }
+    ret.is_me = false
+    if (ret.sender._id.valueOf() == userId) {
+      ret.is_me = true
+      delete ret.sender
+    }
     return ret
   }
 })
@@ -87,7 +97,12 @@ messageSchema.plugin(mongooseAutoPopulate)
 
 const Message = mongoose.model("Message", messageSchema)
 
-Message.watch().on("change", async (data)  => {
+Message.user = (newUserId) => {
+  userId = newUserId
+  return Message
+}
+
+Message.watch().on("change", async (data) => {
   const { fullDocument } = data
   await ChatRoom.updateOne(
     { _id: fullDocument.room },

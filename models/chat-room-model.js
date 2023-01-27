@@ -27,8 +27,7 @@ const chatRoomSchema = new mongoose.Schema(
     admin: {
       type: mongoose.Types.ObjectId,
       ref: User,
-      default: null,
-      autopopulate: true
+      default: null
     },
     type: {
       type: Number,
@@ -49,7 +48,9 @@ const chatRoomSchema = new mongoose.Schema(
         type: mongoose.Types.ObjectId,
         ref: User,
         default: null,
-        autopopulate: true
+        autopopulate: {
+          select: "_id first_name last_name profile_url is_online"
+        }
       }
     ],
     muted_by: [
@@ -59,7 +60,7 @@ const chatRoomSchema = new mongoose.Schema(
         default: null
       }
     ],
-    members: [{ type: mongoose.Types.ObjectId, ref: User, autopopulate: true }]
+    members: [{ type: mongoose.Types.ObjectId, ref: User }]
   },
   {
     timestamps: {
@@ -70,7 +71,7 @@ const chatRoomSchema = new mongoose.Schema(
   }
 )
 
-chatRoomSchema.virtual("is_muted").get(function() {
+chatRoomSchema.virtual("is_muted").get(function () {
   const { muted_by } = this
   const isMuted = muted_by.map((v) => v.valueOf()).indexOf(userId) != -1
   return isMuted
@@ -104,6 +105,7 @@ chatRoomSchema.plugin(mongoosePaginate)
 const ChatRoom = mongoose.model("Chat Room", chatRoomSchema)
 ChatRoom.user = (newUserId) => {
   userId = newUserId
+  Message.user(newUserId)
   return ChatRoom
 }
 

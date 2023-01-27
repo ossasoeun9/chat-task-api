@@ -6,6 +6,10 @@ const voiceSchema = mongoose.Schema(
     url: String,
     size: Number,
     duration: Number, // Second
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    } // Second
   },
   {
     timestamps: {
