@@ -13,6 +13,7 @@ import authRoute from "./routes/auth-route.js"
 import deviceRoute from "./routes/device-route.js"
 import contactRoute from "./routes/contact-route.js"
 import chatRoomRoute from "./routes/chat-room-route.js"
+import messageRoute from "./routes/message-route.js"
 
 dotenv.config()
 connectDB()
@@ -40,6 +41,7 @@ app.use("/users", userRoute)
 app.use("/device-login", deviceRoute)
 app.use("/contacts", contactRoute)
 app.use("/chat-rooms", chatRoomRoute)
+app.use("/messages", messageRoute)
 
 const port = process.env.PORT || 3000
 app.listen(port, () => {
