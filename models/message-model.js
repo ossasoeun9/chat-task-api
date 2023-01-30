@@ -59,7 +59,8 @@ const messageSchema = mongoose.Schema(
     },
     url: {
       type: mongoose.Types.ObjectId,
-      ref: Url
+      ref: Url,
+      autopopulate: { select: "-created_at -updated_at" }
     },
     media: [
       {
@@ -74,7 +75,7 @@ const messageSchema = mongoose.Schema(
         ref: FileDB,
         autopopulate: { select: "-created_at -updated_at" }
       }
-    ]
+    ],
   },
   {
     timestamps: {
@@ -141,12 +142,14 @@ Message.user = (newUserId) => {
 
 Message.watch().on("change", async (data) => {
   const { fullDocument } = data
-  await ChatRoom.updateOne(
-    { _id: fullDocument.room },
-    {
-      latest_message: fullDocument._id
-    }
-  )
+  if (fullDocument) {
+    await ChatRoom.updateOne(
+      { _id: fullDocument.room },
+      {
+        latest_message: fullDocument._id
+      }
+    )
+  }
 })
 
 export default Message

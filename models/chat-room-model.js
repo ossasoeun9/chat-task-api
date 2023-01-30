@@ -106,6 +106,10 @@ chatRoomSchema.set("toJSON", {
   virtuals: true
 })
 
+chatRoomSchema.virtual('latest_message2').get(function() {
+  return Message.findOne({room: this._id}).sort({created_at: -1})
+})
+
 chatRoomSchema.set("toObject", { virtuals: true })
 
 chatRoomSchema.plugin(mongooseAutoPopulate)

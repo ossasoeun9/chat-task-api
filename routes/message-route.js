@@ -11,6 +11,6 @@ const router = express.Router()
 router.get("/:roomId", getMessage)
 router.post("/:roomId/send", sendMessage)
 router.post("/:messageId/edit", editMessage)
-router.delete("/:messageId/delete", deleteMessage)
+router.delete("/delete", deleteMessage)
 
 export default router

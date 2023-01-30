@@ -9,6 +9,7 @@ import { isVideo } from "../../utils/file-type.js"
 import { getVideoDurationInSeconds } from "get-video-duration"
 import Media from "../../models/media-model.js"
 import FileDB from "../../models/file-model.js"
+import Url from "../../models/url-model.js"
 
 const sendText = async (req, res) => {
   const { text, ref_message } = req.body
@@ -117,7 +118,7 @@ const sendMedia = async (req, res) => {
         resMedia.push(sss)
       }
       const newMedia = await Media.insertMany(resMedia)
-      const newMessage = await Message.create({
+      const newMessage = await Message.user(_id).create({
         sender: _id,
         room: roomId,
         text,
@@ -128,7 +129,7 @@ const sendMedia = async (req, res) => {
     } else {
       const resMedia = await storeMedia(media.path, roomId)
       const newMedia = await Media.create(resMedia)
-      const newMessage = await Message.create({
+      const newMessage = await Message.user(_id).create({
         sender: _id,
         room: roomId,
         text,
@@ -198,7 +199,7 @@ const sendFiles = async (req, res) => {
         resFiles.push(sss)
       }
       const newFile = await FileDB.insertMany(resFiles)
-      const newMessage = await Message.create({
+      const newMessage = await Message.user(_id).create({
         sender: _id,
         room: roomId,
         text,
@@ -209,7 +210,7 @@ const sendFiles = async (req, res) => {
     } else {
       const resFile = storeFile(files.path, roomId)
       const newFile = await FileDB.create(resFile)
-      const newMessage = await Message.create({
+      const newMessage = await Message.user(_id).create({
         sender: _id,
         room: roomId,
         text,
@@ -252,7 +253,26 @@ const storeFile = (filePath, roomId) => {
 }
 
 const sendUrl = async (req, res) => {
-  res.send("Send Url")
+  const { _id } = req.user
+  const { url, is_preview, text } = req.body
+  if (!(url && is_preview))
+    return res.status(400).json({ message: "Url & is_preview required" })
+
+  try {
+    const newUrl = await Url.create({
+      link: url,
+      is_preview: is_preview == 1
+    })
+    const message = await Message.user(_id).create({
+      sender: _id,
+      url: newUrl,
+      text,
+      room: req.params.roomId
+    })
+    return res.json(message)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
 }
 
 export { sendText, forwardMessage, sendVoice, sendMedia, sendFiles, sendUrl }

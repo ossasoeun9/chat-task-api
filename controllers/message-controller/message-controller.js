@@ -9,12 +9,22 @@ import {
 } from "./send-message-controller.js"
 
 const getMessage = async (req, res) => {
-  const { page = 1, limit = 10 } = req.query
+  const { _id } = req.user
+  const { search, page = 1, limit = 10 } = req.query
   const { roomId } = req.params
-  const messages = await Message.user(req.user._id).paginate(
-    { room: roomId },
-    { page, limit, sort: { created_at: -1 } }
-  )
+  const query =
+    search && search.length > 0
+      ? {
+          room: roomId,
+          deleted_by: { $nin: [_id] },
+          text: new RegExp(search, "i")
+        }
+      : { room: roomId, deleted_by: { $nin: [_id] } }
+  const messages = await Message.user(req.user._id).paginate(query, {
+    page,
+    limit,
+    sort: { created_at: -1 }
+  })
   return res.json(messages)
 }
 
@@ -32,7 +42,7 @@ const sendMessage = async (req, res) => {
       return sendMedia(req, res)
     case "6":
       return sendFiles(req, res)
-    case "7'":
+    case "7":
       return sendUrl(req, res)
     default:
       return res.status(400).json({ message: "Type is invalid" })
@@ -53,7 +63,28 @@ const editMessage = async (req, res) => {
 }
 
 const deleteMessage = async (req, res) => {
-  res.send("Delete Message")
+  const { _id } = req.user
+  const { messages, for_everyone } = req.body
+  if (!(messages && for_everyone))
+    return res
+      .status(400)
+      .json({ message: "Messages && for_everyone is required" })
+
+  const messagesJson = JSON.parse(messages)
+  if (!Array.isArray(messagesJson))
+    return res.status(400).json({ message: "Messages must be array" })
+
+  if (for_everyone != 1) {
+    try {
+      const messageUpdated = await Message.user(_id).updateMany(
+        { _id: { $in: messagesJson } },
+        { $addToSet: { deleted_by: [_id] } }
+      )
+      return res.json(messageUpdated)
+    } catch (error) {
+      return res.json({ error })
+    }
+  }
 }
 
 export { getMessage, sendMessage, editMessage, deleteMessage }
