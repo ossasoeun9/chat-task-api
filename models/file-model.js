@@ -7,7 +7,8 @@ const fileSchema = mongoose.Schema(
     size: Number,
     room: {
       type: mongoose.Types.ObjectId,
-      ref: "Chat Room"
+      ref: "Chat Room",
+      select: false
     }
   },
   {

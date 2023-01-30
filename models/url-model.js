@@ -7,7 +7,8 @@ const urlSchema = mongoose.Schema(
     is_preview: Boolean,
     room: {
       type: mongoose.Types.ObjectId,
-      ref: "Chat Room"
+      ref: "Chat Room",
+      select: false
     }
   },
   {

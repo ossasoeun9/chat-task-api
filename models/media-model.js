@@ -6,7 +6,12 @@ const mediaSchema = mongoose.Schema(
     url: String,
     size: Number,
     duration: Number, // Second
-    is_video: Boolean
+    is_video: Boolean,
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room",
+      select: false
+    }
   },
   {
     timestamps: {
@@ -20,5 +25,5 @@ const mediaSchema = mongoose.Schema(
 mediaSchema.plugin(mongoosePaginate)
 mongoose.plugin(mongoosePaginate)
 
-const Media = mongoose.model('Media', mediaSchema)
+const Media = mongoose.model("Media", mediaSchema)
 export default Media
