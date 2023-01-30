@@ -8,6 +8,7 @@ import { getAudioDurationInSeconds } from "get-audio-duration"
 import { isVideo } from "../../utils/file-type.js"
 import { getVideoDurationInSeconds } from "get-video-duration"
 import Media from "../../models/media-model.js"
+import FileDB from "../../models/file-model.js"
 
 const sendText = async (req, res) => {
   const { text, ref_message } = req.body
@@ -182,7 +183,72 @@ const storeMedia = async (filePath, roomId) => {
 }
 
 const sendFiles = async (req, res) => {
-  res.send("Send Files")
+  const { _id } = req.user
+  const { text } = req.body
+  const { roomId } = req.params
+  const { files } = req.files
+  if (!files) return res.status(400).json({ message: "Files is required" })
+
+  try {
+    if (Array.isArray(files)) {
+      var resFiles = []
+      for (let i = 0; i < files.length; i++) {
+        const element = files[i]
+        const sss = storeFile(element.path, roomId)
+        resFiles.push(sss)
+      }
+      const newFile = await FileDB.insertMany(resFiles)
+      const newMessage = await Message.create({
+        sender: _id,
+        room: roomId,
+        text,
+        type: 6,
+        files: newFile
+      })
+      return res.json(newMessage)
+    } else {
+      const resFile = storeFile(files.path, roomId)
+      const newFile = await FileDB.create(resFile)
+      const newMessage = await Message.create({
+        sender: _id,
+        room: roomId,
+        text,
+        type: 6,
+        files: [newFile._id]
+      })
+      return res.json(newMessage)
+    }
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
+}
+
+const storeFile = (filePath, roomId) => {
+  const size = getFileSize(filePath)
+
+  const dir = `storage/files/${roomId}/`
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir)
+  }
+
+  const filename =
+    Date.now() + "." + randomBytes(6).toString("hex") + path.extname(filePath)
+
+  const fullPath = path.normalize(`${dir}/${filename}`)
+
+  const content = fs.readFileSync(filePath)
+
+  // write
+  fs.writeFileSync(fullPath, content)
+
+  // clear tmp dir
+  fs.unlinkSync(filePath)
+
+  return {
+    filename,
+    size
+  }
 }
 
 const sendUrl = async (req, res) => {

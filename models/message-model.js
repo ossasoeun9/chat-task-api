@@ -68,7 +68,13 @@ const messageSchema = mongoose.Schema(
         autopopulate: { select: "-created_at -updated_at" }
       }
     ],
-    files: [{ type: mongoose.Types.ObjectId, ref: FileDB }]
+    files: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: FileDB,
+        autopopulate: { select: "-created_at -updated_at" }
+      }
+    ]
   },
   {
     timestamps: {
@@ -110,6 +116,13 @@ messageSchema.set("toJSON", {
         const element = ret.media[i]
         ret.media[i].url = `${apiHost}/media/${ret.room}/${element.filename}`
         delete ret.media[i].filename
+      }
+    }
+    if (ret.files) {
+      for (let i = 0; i < ret.files.length; i++) {
+        const element = ret.files[i]
+        ret.files[i].url = `${apiHost}/files/${ret.room}/${element.filename}`
+        delete ret.files[i].filename
       }
     }
     delete ret.room

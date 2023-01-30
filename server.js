@@ -37,6 +37,7 @@ app.use("/user-profile", express.static("storage/user-profile"))
 app.use("/group-profile", express.static("storage/group-profile"))
 app.use("/voice-messages", express.static("storage/voice-messages"))
 app.use("/media", express.static("storage/media"))
+app.use("/files", express.static("storage/files"))
 
 // Protected route
 app.use(verifyToken)

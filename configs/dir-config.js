@@ -17,6 +17,9 @@ const createDir = () => {
     if (!fs.existsSync("storage/media")) {
       fs.mkdirSync("storage/media")
     }
+    if (!fs.existsSync("storage/files")) {
+      fs.mkdirSync("storage/files")
+    }
   } catch (err) {
     console.log(err)
   }

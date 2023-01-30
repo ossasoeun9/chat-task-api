@@ -3,7 +3,7 @@ import mongoosePaginate from "mongoose-paginate-v2"
 
 const fileSchema = mongoose.Schema(
   {
-    url: String,
+    filename: String,
     size: Number,
   },
   {
