@@ -5,11 +5,6 @@ const urlSchema = mongoose.Schema(
   {
     link: String,
     is_preview: Boolean,
-    room: {
-      type: mongoose.Types.ObjectId,
-      ref: "Chat Room",
-      select: false
-    }
   },
   {
     timestamps: {

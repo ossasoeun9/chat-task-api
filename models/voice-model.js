@@ -3,13 +3,9 @@ import mongoosePaginate from "mongoose-paginate-v2"
 
 const voiceSchema = mongoose.Schema(
   {
-    url: String,
+    filename: String,
     size: Number,
-    duration: Number, // Second
-    room: {
-      type: mongoose.Types.ObjectId,
-      ref: "Chat Room"
-    } // Second
+    duration: Number,
   },
   {
     timestamps: {

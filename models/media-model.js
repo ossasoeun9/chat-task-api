@@ -3,15 +3,10 @@ import mongoosePaginate from "mongoose-paginate-v2"
 
 const mediaSchema = mongoose.Schema(
   {
-    url: String,
+    filename: String,
     size: Number,
     duration: Number, // Second
     is_video: Boolean,
-    room: {
-      type: mongoose.Types.ObjectId,
-      ref: "Chat Room",
-      select: false
-    }
   },
   {
     timestamps: {

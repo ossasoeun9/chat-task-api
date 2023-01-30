@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import dotenv from "dotenv"
 import FileDB from "./file-model.js"
 import Media from "./media-model.js"
 import User from "./user-model.js"
@@ -6,6 +7,9 @@ import Url from "./url-model.js"
 import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import ChatRoom from "./chat-room-model.js"
+
+dotenv.config()
+const apiHost = process.env.API_HOST
 
 let userId
 
@@ -48,13 +52,22 @@ const messageSchema = mongoose.Schema(
     text: String,
     voice: {
       type: mongoose.Types.ObjectId,
-      ref: Voice
+      ref: Voice,
+      autopopulate: {
+        select: "-created_at -updated_at"
+      }
     },
     url: {
       type: mongoose.Types.ObjectId,
       ref: Url
     },
-    media: [{ type: mongoose.Types.ObjectId, ref: Media }],
+    media: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: Media,
+        autopopulate: { select: "-created_at -updated_at" }
+      }
+    ],
     files: [{ type: mongoose.Types.ObjectId, ref: FileDB }]
   },
   {
@@ -68,7 +81,6 @@ const messageSchema = mongoose.Schema(
 
 messageSchema.set("toJSON", {
   transform: (_, ret, __) => {
-    delete ret.room
     if (ret.text == null) {
       delete ret.text
     }
@@ -89,6 +101,18 @@ messageSchema.set("toJSON", {
       ret.is_me = true
       delete ret.sender
     }
+    if (ret.voice) {
+      ret.voice.url = `${apiHost}/voice-messages/${ret.room}/${ret.voice.filename}`
+      delete ret.voice.filename
+    }
+    if (ret.media) {
+      for (let i = 0; i < ret.media.length; i++) {
+        const element = ret.media[i]
+        ret.media[i].url = `${apiHost}/media/${ret.room}/${element.filename}`
+        delete ret.media[i].filename
+      }
+    }
+    delete ret.room
     return ret
   }
 })

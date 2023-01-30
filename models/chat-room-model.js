@@ -1,8 +1,12 @@
 import mongoose from "mongoose"
+import dotenv from "dotenv"
 import Message from "./message-model.js"
 import User from "./user-model.js"
 import mongoosePaginate from "mongoose-paginate-v2"
 import mongooseAutoPopulate from "mongoose-autopopulate"
+
+dotenv.config()
+const apiHost = process.env.API_HOST
 
 /*
 Note
@@ -87,11 +91,15 @@ chatRoomSchema.set("toJSON", {
       delete ret.admin
       delete ret.name
       delete ret.description
+      delete ret.profile_url
     }
     if (type == 2 && people.length == 2) {
       const indexOfPerson =
         people.map((v) => v._id.valueOf()).indexOf(userId) == 0 ? 1 : 0
       ret.person = people[indexOfPerson]
+    }
+    if (ret.profile_url) {
+      ret.profile_url = `${apiHost}/group-profile/${ret._id}/${ret.profile_url}`
     }
     return ret
   },

@@ -5,11 +5,6 @@ const fileSchema = mongoose.Schema(
   {
     url: String,
     size: Number,
-    room: {
-      type: mongoose.Types.ObjectId,
-      ref: "Chat Room",
-      select: false
-    }
   },
   {
     timestamps: {
