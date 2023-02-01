@@ -6,7 +6,6 @@ import User from "./user-model.js"
 import Url from "./url-model.js"
 import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
-import ChatRoom from "./chat-room-model.js"
 
 dotenv.config()
 const apiHost = process.env.API_HOST
@@ -76,6 +75,21 @@ const messageSchema = mongoose.Schema(
         autopopulate: { select: "-created_at -updated_at" }
       }
     ],
+    read_by: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: User,
+        autopopulate: {
+          select: "-_id first_name profile_url"
+        }
+      }
+    ],
+    deleted_by: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: User
+      }
+    ]
   },
   {
     timestamps: {
@@ -86,26 +100,32 @@ const messageSchema = mongoose.Schema(
   }
 )
 
+messageSchema.virtual("is_me").get(function () {
+  return this.sender._id.valueOf() == userId
+})
+
+messageSchema.set("toObject", { virtuals: true, getters: true })
+
 messageSchema.set("toJSON", {
   transform: (_, ret, __) => {
+    delete ret.deleted_by
+    delete ret.id
     if (ret.text == null) {
       delete ret.text
     }
     if (ret.ref_message == null) {
       delete ret.ref_message
     }
-    if (ret.media.length == 0) {
+    if (ret.media && ret.media.length == 0) {
       delete ret.media
     }
-    if (ret.files.length == 0) {
+    if (ret.files && ret.files.length == 0) {
       delete ret.files
     }
     if (ret.url == null) {
       delete ret.url
     }
-    ret.is_me = false
-    if (ret.sender._id.valueOf() == userId) {
-      ret.is_me = true
+    if (ret.is_me) {
       delete ret.sender
     }
     if (ret.voice) {
@@ -126,9 +146,18 @@ messageSchema.set("toJSON", {
         delete ret.files[i].filename
       }
     }
+    if (ret.type == 2) {
+      delete ret.sender
+    }
+    if (ret.is_me) {
+      ret.seen = ret.read_by.length > 0
+    }
+    delete ret.read_by
     delete ret.room
     return ret
-  }
+  },
+  virtuals: true,
+  getters: true
 })
 
 messageSchema.plugin(mongooseAutoPopulate)
@@ -139,17 +168,5 @@ Message.user = (newUserId) => {
   userId = newUserId
   return Message
 }
-
-Message.watch().on("change", async (data) => {
-  const { fullDocument } = data
-  if (fullDocument) {
-    await ChatRoom.updateOne(
-      { _id: fullDocument.room },
-      {
-        latest_message: fullDocument._id
-      }
-    )
-  }
-})
 
 export default Message

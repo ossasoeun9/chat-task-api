@@ -28,6 +28,30 @@ const getMessage = async (req, res) => {
   return res.json(messages)
 }
 
+const readMessage = async (req, res) => {
+  const { _id } = req.user
+  const { roomId } = req.params
+
+  try {
+    const message = await Message.user(_id).updateMany(
+      {
+        $and: [
+          { room: roomId },
+          { sender: { $ne: _id } },
+          { read_by: { $nin: [_id] } },
+          { deleted_by: { $nin: [_id] } }
+        ]
+      },
+      {
+        $addToSet: { read_by: [_id] }
+      }
+    )
+    return res.json(message)
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
+}
+
 const sendMessage = async (req, res) => {
   const { type } = req.body
   if (!type) return res.status(400).json({ message: "Type is required" })
@@ -87,4 +111,4 @@ const deleteMessage = async (req, res) => {
   }
 }
 
-export { getMessage, sendMessage, editMessage, deleteMessage }
+export { getMessage, readMessage, sendMessage, editMessage, deleteMessage }

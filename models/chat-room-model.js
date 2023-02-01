@@ -41,17 +41,10 @@ const chatRoomSchema = new mongoose.Schema(
       type: String,
       default: null
     },
-    latest_message: {
-      type: mongoose.Types.ObjectId,
-      ref: Message,
-      default: null,
-      autopopulate: true
-    },
     people: [
       {
         type: mongoose.Types.ObjectId,
         ref: User,
-        default: null,
         autopopulate: {
           select: "_id first_name last_name profile_url is_online"
         }
@@ -60,8 +53,7 @@ const chatRoomSchema = new mongoose.Schema(
     muted_by: [
       {
         type: mongoose.Types.ObjectId,
-        ref: User,
-        default: null
+        ref: User
       }
     ],
     members: [{ type: mongoose.Types.ObjectId, ref: User }]
@@ -79,6 +71,22 @@ chatRoomSchema.virtual("is_muted").get(function () {
   const { muted_by } = this
   const isMuted = muted_by.map((v) => v.valueOf()).indexOf(userId) != -1
   return isMuted
+})
+
+chatRoomSchema.virtual("latest_message", {
+  ref: Message,
+  localField: "_id",
+  foreignField: "room",
+  justOne: true,
+  options: { sort: { created_at: -1 } }
+})
+
+chatRoomSchema.virtual("unread", {
+  ref: Message,
+  localField: "_id",
+  foreignField: "room",
+  justOne: false,
+  count: true
 })
 
 chatRoomSchema.set("toJSON", {
@@ -103,14 +111,11 @@ chatRoomSchema.set("toJSON", {
     }
     return ret
   },
-  virtuals: true
+  virtuals: true,
+  getters: true
 })
 
-chatRoomSchema.virtual('latest_message2').get(function() {
-  return Message.findOne({room: this._id}).sort({created_at: -1})
-})
-
-chatRoomSchema.set("toObject", { virtuals: true })
+chatRoomSchema.set("toObject", { virtuals: true, getters: true })
 
 chatRoomSchema.plugin(mongooseAutoPopulate)
 chatRoomSchema.plugin(mongoosePaginate)

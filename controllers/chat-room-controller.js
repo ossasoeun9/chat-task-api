@@ -14,13 +14,28 @@ const getChatRoom = async (req, res) => {
     const chats = await ChatRoom.user(_id).paginate(
       { $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }] },
       {
-        select: "-members",
-        sort: { "updated_at": -1 },
+        select: "-members -deleted_by",
+        sort: { latest_message: 1 },
+        populate: [
+          {
+            path: "latest_message",
+            match: { deleted_by: { $nin: [_id] } }
+          },
+          {
+            path: "unread",
+            match: {
+              $and: [
+                { read_by: { $nin: [_id] } },
+                { deleted_by: { $nin: [_id] } },
+                { sender: { $ne: _id } }
+              ]
+            }
+          }
+        ],
         page,
         limit
       }
     )
-    // const chats =  await ChatRoom.find()
 
     return res.json(chats)
   } catch (error) {
@@ -30,7 +45,9 @@ const getChatRoom = async (req, res) => {
 
 const getChatRoomDetail = async (req, res) => {
   try {
-    const room = await ChatRoom.user(req.user._id).findOne({ _id: req.params.id })
+    const room = await ChatRoom.user(req.user._id).findOne({
+      _id: req.params.id
+    })
 
     return res.json(room)
   } catch (error) {
@@ -162,7 +179,9 @@ const createGroupChat = async (req, res) => {
 const editChatRoom = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.id
-  const room = await ChatRoom.user(_id).findById(roomId).select("addmin name description")
+  const room = await ChatRoom.user(_id)
+    .findById(roomId)
+    .select("addmin name description")
   if (!room.admin) {
     return res.status(400).json({
       message: "Room is not a group"
@@ -200,13 +219,19 @@ const muteOrUnmute = async (req, res) => {
     })
   }
   if (!room.is_muted) {
-    await ChatRoom.user(_id).updateOne({ _id: roomId }, { $push: { muted_by: _id } })
+    await ChatRoom.user(_id).updateOne(
+      { _id: roomId },
+      { $push: { muted_by: _id } }
+    )
     return res.json({
       is_muted: true,
       message: "muted"
     })
   } else {
-    await ChatRoom.user(_id).updateOne({ _id: roomId }, { $pull: { muted_by: _id } })
+    await ChatRoom.user(_id).updateOne(
+      { _id: roomId },
+      { $pull: { muted_by: _id } }
+    )
     return res.json({
       is_muted: false,
       message: "Unmuted"
@@ -328,11 +353,14 @@ const joinChatRoom = async (req, res) => {
     })
   }
   try {
-    const myRoom = await ChatRoom.user(_id).findOne({ _id: roomId, members: _id }).select(
-      "-members"
-    )
+    const myRoom = await ChatRoom.user(_id)
+      .findOne({ _id: roomId, members: _id })
+      .select("-members")
     if (myRoom) return res.json(myRoom)
-    await ChatRoom.user(_id).updateOne({ _id: roomId }, { $addToSet: { members: [_id] } })
+    await ChatRoom.user(_id).updateOne(
+      { _id: roomId },
+      { $addToSet: { members: [_id] } }
+    )
     const user = await User.findById(_id)
     await Message.create({
       sender: user.id,
@@ -419,7 +447,10 @@ const setChatRommProfile = async (req, res) => {
 
     // write
     fs.writeFileSync(fullPath, content)
-    await ChatRoom.user(_id).updateOne({ _id: roomId }, { profile_url: filename })
+    await ChatRoom.user(_id).updateOne(
+      { _id: roomId },
+      { profile_url: filename }
+    )
 
     // clear tmp dir
     fs.unlinkSync(profile.path)
