@@ -6,6 +6,14 @@ const voiceSchema = mongoose.Schema(
     filename: String,
     size: Number,
     duration: Number,
+    owner: {
+      type: mongoose.Types.ObjectId,
+      ref: "User"
+    },
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    }
   },
   {
     timestamps: {
@@ -18,5 +26,5 @@ const voiceSchema = mongoose.Schema(
 
 voiceSchema.plugin(mongoosePaginate)
 
-const Voice = mongoose.model('Voice', voiceSchema)
+const Voice = mongoose.model("Voice", voiceSchema)
 export default Voice

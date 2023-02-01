@@ -1,3 +1,5 @@
+import path from "path"
+import fs from "fs"
 import Message from "../../models/message-model.js"
 import {
   forwardMessage,
@@ -7,6 +9,10 @@ import {
   sendUrl,
   sendVoice
 } from "./send-message-controller.js"
+import Media from "../../models/media-model.js"
+import FileDB from "../../models/file-model.js"
+import Voice from "../../models/voice-model.js"
+import ChatRoom from "../../models/chat-room-model.js"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -86,6 +92,19 @@ const editMessage = async (req, res) => {
   return res.json(newMessage)
 }
 
+const crearHistory = async (req, res) => {
+  const { roomId } = req.params
+  try {
+    await Message.updateMany(
+      { $and: [{ room: roomId }, { deleted_by: { $nin: [req.user._id] } }] },
+      { $addToSet: { deleted_by: [req.user._id] } }
+    )
+    return res.json({ message: "Clear" })
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
+}
+
 const deleteMessage = async (req, res) => {
   const { _id } = req.user
   const { messages, for_everyone } = req.body
@@ -100,15 +119,69 @@ const deleteMessage = async (req, res) => {
 
   if (for_everyone != 1) {
     try {
-      const messageUpdated = await Message.user(_id).updateMany(
+      await Message.user(_id).updateMany(
         { _id: { $in: messagesJson } },
         { $addToSet: { deleted_by: [_id] } }
       )
-      return res.json(messageUpdated)
+      return res.json({ message: "Deleted" })
+    } catch (error) {
+      return res.json({ error })
+    }
+  } else {
+    try {
+      const messages = await Message.find({
+        $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
+      })
+      for (var i = 0; i < messages.length; i++) {
+        const { type, room, media, files, voice } = messages[i]
+        if (type == 4) {
+          fs.unlinkSync(
+            path.normalize(`storage/voice-messages/${room}/${voice.filename}`)
+          )
+          await Voice.deleteOne({ _id: voice._id })
+        }
+        if (type == 5) {
+          for (var f = 0; f < media.length; f++) {
+            const md = media[f]
+            fs.unlinkSync(
+              path.normalize(`storage/media/${room}/${md.filename}`)
+            )
+          }
+          await Media.deleteMany({
+            _id: { $in: media.map((v) => v._id.valueOf()) }
+          })
+        }
+        if (type == 6) {
+          for (var f = 0; f < files.length; f++) {
+            const fi = files[f]
+            fs.unlinkSync(
+              path.normalize(`storage/files/${room}/${fi.filename}`)
+            )
+          }
+          await FileDB.deleteMany({
+            _id: { $in: files.map((v) => v._id.valueOf()) }
+          })
+        }
+      }
+      await Message.deleteMany({
+        $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
+      })
+      await Message.user(_id).updateMany(
+        { $and: [{ _id: { $in: messagesJson } }] },
+        { $addToSet: { deleted_by: [_id] } }
+      )
+      return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
     }
   }
 }
 
-export { getMessage, readMessage, sendMessage, editMessage, deleteMessage }
+export {
+  getMessage,
+  readMessage,
+  sendMessage,
+  editMessage,
+  crearHistory,
+  deleteMessage
+}

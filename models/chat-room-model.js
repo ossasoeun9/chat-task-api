@@ -111,11 +111,10 @@ chatRoomSchema.set("toJSON", {
     }
     return ret
   },
-  virtuals: true,
-  getters: true
+  virtuals: true
 })
 
-chatRoomSchema.set("toObject", { virtuals: true, getters: true })
+chatRoomSchema.set("toObject", { virtuals: true })
 
 chatRoomSchema.plugin(mongooseAutoPopulate)
 chatRoomSchema.plugin(mongoosePaginate)

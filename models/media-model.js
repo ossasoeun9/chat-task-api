@@ -7,6 +7,14 @@ const mediaSchema = mongoose.Schema(
     size: Number,
     duration: Number, // Second
     is_video: Boolean,
+    owner: {
+      type: mongoose.Types.ObjectId,
+      ref: "User"
+    },
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    }
   },
   {
     timestamps: {

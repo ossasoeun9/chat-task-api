@@ -5,6 +5,14 @@ const fileSchema = mongoose.Schema(
   {
     filename: String,
     size: Number,
+    owner: {
+      type: mongoose.Types.ObjectId,
+      ref: "User"
+    },
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    }
   },
   {
     timestamps: {

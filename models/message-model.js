@@ -53,26 +53,26 @@ const messageSchema = mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: Voice,
       autopopulate: {
-        select: "-created_at -updated_at"
+        select: "-created_at -updated_at -owner -room"
       }
     },
     url: {
       type: mongoose.Types.ObjectId,
       ref: Url,
-      autopopulate: { select: "-created_at -updated_at" }
+      autopopulate: { select: "-created_at -updated_at -owner -room" }
     },
     media: [
       {
         type: mongoose.Types.ObjectId,
         ref: Media,
-        autopopulate: { select: "-created_at -updated_at" }
+        autopopulate: { select: "-created_at -updated_at -owner -room" }
       }
     ],
     files: [
       {
         type: mongoose.Types.ObjectId,
         ref: FileDB,
-        autopopulate: { select: "-created_at -updated_at" }
+        autopopulate: { select: "-created_at -updated_at -owner -room" }
       }
     ],
     read_by: [

@@ -5,6 +5,14 @@ const urlSchema = mongoose.Schema(
   {
     link: String,
     is_preview: Boolean,
+    owner: {
+      type: mongoose.Types.ObjectId,
+      ref: "User"
+    },
+    room: {
+      type: mongoose.Types.ObjectId,
+      ref: "Chat Room"
+    }
   },
   {
     timestamps: {
@@ -17,5 +25,5 @@ const urlSchema = mongoose.Schema(
 
 urlSchema.plugin(mongoosePaginate)
 
-const Url = mongoose.model('Url', urlSchema)
+const Url = mongoose.model("Url", urlSchema)
 export default Url

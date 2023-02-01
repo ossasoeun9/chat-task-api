@@ -85,7 +85,9 @@ const sendVoice = async (req, res) => {
     const newVoice = await Voice.create({
       filename,
       size,
-      duration
+      duration,
+      room: roomId,
+      owner: _id
     })
 
     const newMessage = await Message.user(_id).create({
@@ -114,7 +116,7 @@ const sendMedia = async (req, res) => {
       var resMedia = []
       for (let i = 0; i < media.length; i++) {
         const element = media[i]
-        const sss = await storeMedia(element.path, roomId)
+        const sss = await storeMedia(element.path, roomId, _id)
         resMedia.push(sss)
       }
       const newMedia = await Media.insertMany(resMedia)
@@ -127,7 +129,7 @@ const sendMedia = async (req, res) => {
       })
       return res.json(newMessage)
     } else {
-      const resMedia = await storeMedia(media.path, roomId)
+      const resMedia = await storeMedia(media.path, roomId, _id)
       const newMedia = await Media.create(resMedia)
       const newMessage = await Message.user(_id).create({
         sender: _id,
@@ -143,7 +145,7 @@ const sendMedia = async (req, res) => {
   }
 }
 
-const storeMedia = async (filePath, roomId) => {
+const storeMedia = async (filePath, roomId, userId) => {
   const is_video = isVideo(filePath)
   const size = getFileSize(filePath)
 
@@ -172,7 +174,9 @@ const storeMedia = async (filePath, roomId) => {
       filename,
       size,
       duration,
-      is_video
+      is_video,
+      room: roomId,
+      owner: userId
     }
   }
 
@@ -195,7 +199,7 @@ const sendFiles = async (req, res) => {
       var resFiles = []
       for (let i = 0; i < files.length; i++) {
         const element = files[i]
-        const sss = storeFile(element.path, roomId)
+        const sss = storeFile(element.path, roomId, _id)
         resFiles.push(sss)
       }
       const newFile = await FileDB.insertMany(resFiles)
@@ -208,7 +212,7 @@ const sendFiles = async (req, res) => {
       })
       return res.json(newMessage)
     } else {
-      const resFile = storeFile(files.path, roomId)
+      const resFile = storeFile(files.path, roomId, _id)
       const newFile = await FileDB.create(resFile)
       const newMessage = await Message.user(_id).create({
         sender: _id,
@@ -224,7 +228,7 @@ const sendFiles = async (req, res) => {
   }
 }
 
-const storeFile = (filePath, roomId) => {
+const storeFile = (filePath, roomId, userId) => {
   const size = getFileSize(filePath)
 
   const dir = `storage/files/${roomId}/`
@@ -248,7 +252,9 @@ const storeFile = (filePath, roomId) => {
 
   return {
     filename,
-    size
+    size,
+    room: roomId,
+    owner: userId
   }
 }
 
@@ -261,7 +267,9 @@ const sendUrl = async (req, res) => {
   try {
     const newUrl = await Url.create({
       link: url,
-      is_preview: is_preview == 1
+      is_preview: is_preview == 1,
+      room: req.params.roomId,
+      owner: _id
     })
     const message = await Message.user(_id).create({
       sender: _id,
