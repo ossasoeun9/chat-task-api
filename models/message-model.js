@@ -10,8 +10,6 @@ import mongooseAutoPopulate from "mongoose-autopopulate"
 dotenv.config()
 const apiHost = process.env.API_HOST
 
-let userId
-
 /*
 Note
 1 is activity message
@@ -100,62 +98,9 @@ const messageSchema = mongoose.Schema(
   }
 )
 
-messageSchema.virtual("is_me").get(function () {
-  return this.sender._id.valueOf() == userId
-})
-
 messageSchema.set("toObject", { virtuals: true, getters: true })
 
 messageSchema.set("toJSON", {
-  transform: (_, ret, __) => {
-    delete ret.deleted_by
-    delete ret.id
-    if (ret.text == null) {
-      delete ret.text
-    }
-    if (ret.ref_message == null) {
-      delete ret.ref_message
-    }
-    if (ret.media && ret.media.length == 0) {
-      delete ret.media
-    }
-    if (ret.files && ret.files.length == 0) {
-      delete ret.files
-    }
-    if (ret.url == null) {
-      delete ret.url
-    }
-    if (ret.is_me) {
-      delete ret.sender
-    }
-    if (ret.voice) {
-      ret.voice.url = `${apiHost}/voice-messages/${ret.room}/${ret.voice.filename}`
-      delete ret.voice.filename
-    }
-    if (ret.media) {
-      for (let i = 0; i < ret.media.length; i++) {
-        const element = ret.media[i]
-        ret.media[i].url = `${apiHost}/media/${ret.room}/${element.filename}`
-        delete ret.media[i].filename
-      }
-    }
-    if (ret.files) {
-      for (let i = 0; i < ret.files.length; i++) {
-        const element = ret.files[i]
-        ret.files[i].url = `${apiHost}/files/${ret.room}/${element.filename}`
-        delete ret.files[i].filename
-      }
-    }
-    if (ret.type == 2) {
-      delete ret.sender
-    }
-    if (ret.is_me) {
-      ret.seen = ret.read_by.length > 0
-    }
-    delete ret.read_by
-    delete ret.room
-    return ret
-  },
   virtuals: true,
   getters: true
 })
@@ -163,10 +108,5 @@ messageSchema.set("toJSON", {
 messageSchema.plugin(mongooseAutoPopulate)
 
 const Message = mongoose.model("Message", messageSchema)
-
-Message.user = (newUserId) => {
-  userId = newUserId
-  return Message
-}
 
 export default Message

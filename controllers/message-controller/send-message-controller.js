@@ -10,19 +10,26 @@ import { getVideoDurationInSeconds } from "get-video-duration"
 import Media from "../../models/media-model.js"
 import FileDB from "../../models/file-model.js"
 import Url from "../../models/url-model.js"
+import ChatRoom from "../../models/chat-room-model.js"
+import { msgToJson } from "../../utils/msg-to-json.js"
 
 const sendText = async (req, res) => {
+  const { _id } = req.user
+  const { roomId } = req.params
   const { text, ref_message } = req.body
   if (!text) return res.status(400).json({ message: "Text is required" })
   try {
     const message = await Message.create({
-      sender: req.user._id,
+      sender: _id,
       type: 2,
       text,
-      room: req.params.roomId,
+      room: roomId,
       ref_message
     })
-    return res.json(message)
+    ChatRoom.user(req.user._id)
+      .findById(roomId)
+      .then((data) => {})
+    return res.json(msgToJson(message, _id))
   } catch (error) {
     return res.status(500).json({ error })
   }

@@ -5,13 +5,16 @@ import ChatRoom from "../models/chat-room-model.js"
 import Message from "../models/message-model.js"
 import User from "../models/user-model.js"
 import messageValidator from "../utils/message-validator.js"
+import { roomPaginateToJson, roomToJson } from "../utils/chat-room-to-json.js"
+import { sendToClient } from "./ws-controller.js"
+import mongoose from "mongoose"
 
 const getChatRoom = async (req, res) => {
   const { _id } = req.user
   const { page = 1, limit = 10 } = req.query
 
   try {
-    const chats = await ChatRoom.user(_id).paginate(
+    const chats = await ChatRoom.paginate(
       { $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }] },
       {
         select: "-members -deleted_by",
@@ -37,7 +40,7 @@ const getChatRoom = async (req, res) => {
       }
     )
 
-    return res.json(chats)
+    return res.json(roomPaginateToJson(chats, _id))
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -45,11 +48,11 @@ const getChatRoom = async (req, res) => {
 
 const getChatRoomDetail = async (req, res) => {
   try {
-    const room = await ChatRoom.user(req.user._id).findOne({
+    const room = await ChatRoom.findOne({
       _id: req.params.id
     })
 
-    return res.json(room)
+    return res.json(roomToJson(room))
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -82,14 +85,29 @@ const ceateTwoPeopleRoom = async (req, res) => {
     return res.status(400).json({ message: "Receiver is required" })
   }
 
-  const room0 = await ChatRoom.user(sender)
-    .findOne({
-      people: [sender, receiver]
-    })
+  const room0 = await ChatRoom.findOne({
+    people: [sender, receiver]
+  })
     .select("-members")
+    .populate([
+      {
+        path: "latest_message",
+        match: { deleted_by: { $nin: [sender] } }
+      },
+      {
+        path: "unread",
+        match: {
+          $and: [
+            { read_by: { $nin: [sender] } },
+            { deleted_by: { $nin: [sender] } },
+            { sender: { $ne: sender } }
+          ]
+        }
+      }
+    ])
 
   if (room0) {
-    return res.json(room0)
+    return res.json(roomToJson(room0, sender))
   }
 
   const message = messageValidator(req)
@@ -101,22 +119,35 @@ const ceateTwoPeopleRoom = async (req, res) => {
   const { message_type, text } = req.body
 
   try {
-    const { _id } = await ChatRoom.user(sender).create({
+    const room = await ChatRoom.create({
       type: 2,
       people: [sender, receiver]
     })
     await Message.create({
       sender,
-      room: _id,
+      room: room._id,
       type: message_type,
       text: text
     })
-    const room2 = await ChatRoom.user(sender)
-      .findOne({
-        people: [sender, receiver]
-      })
-      .select("-members")
-    return res.json(room2)
+    const room2 = await ChatRoom.findById(room._id).populate([
+      {
+        path: "latest_message",
+        match: { deleted_by: { $nin: [sender] } }
+      },
+      {
+        path: "unread",
+        match: {
+          $and: [
+            { read_by: { $nin: [sender] } },
+            { deleted_by: { $nin: [sender] } },
+            { sender: { $ne: sender } }
+          ]
+        }
+      }
+    ])
+    sendToClient(sender, room._id)
+    sendToClient(receiver, room._id)
+    return res.json(roomToJson(room2, sender))
   } catch (error) {
     return res.status(500).json({
       message: error
@@ -151,7 +182,7 @@ const createGroupChat = async (req, res) => {
   membersJson.push(userId)
 
   try {
-    const { _id } = await ChatRoom.user(userId).create({
+    const { _id } = await ChatRoom.create({
       type: room_type,
       members: membersJson,
       admin: userId,
@@ -162,12 +193,9 @@ const createGroupChat = async (req, res) => {
       sender: userId,
       room: _id,
       type: 1,
-      text: `${user.username} created this group`
+      text: `@${user.username} created this group`
     })
-    const room2 = await ChatRoom.user(userId)
-      .findById(_id)
-      .select("-people -members")
-      .select("-members")
+    const room2 = await findAndSendToClient(_id, userId)
     return res.json(room2)
   } catch (error) {
     return res.status(500).json({
@@ -179,16 +207,14 @@ const createGroupChat = async (req, res) => {
 const editChatRoom = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.id
-  const room = await ChatRoom.user(_id)
-    .findById(roomId)
-    .select("addmin name description")
+  const room = await ChatRoom.findById(roomId)
   if (!room.admin) {
     return res.status(400).json({
       message: "Room is not a group"
     })
   }
 
-  if (room.admin.id != _id) {
+  if (room.admin != _id) {
     return res.json({
       message: "Can't update, permission denind"
     })
@@ -204,7 +230,8 @@ const editChatRoom = async (req, res) => {
   room.name = name
   room.description = description || room.description
   await room.save()
-  const roomUpdated = await ChatRoom.findById(roomId).select("-people -members")
+
+  const roomUpdated = await findAndSendToClient(roomId, _id, 2)
 
   return res.json(roomUpdated)
 }
@@ -212,26 +239,22 @@ const editChatRoom = async (req, res) => {
 const muteOrUnmute = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.id
-  const room = await ChatRoom.user(_id).findById(roomId)
+  const room = await ChatRoom.findById(roomId)
   if (!room) {
     return res.status(400).json({
       message: "Invalid id"
     })
   }
   if (!room.is_muted) {
-    await ChatRoom.user(_id).updateOne(
-      { _id: roomId },
-      { $push: { muted_by: _id } }
-    )
+    await ChatRoom.updateOne({ _id: roomId }, { $push: { muted_by: _id } })
+    sendToClient(_id, roomId, 2)
     return res.json({
       is_muted: true,
       message: "muted"
     })
   } else {
-    await ChatRoom.user(_id).updateOne(
-      { _id: roomId },
-      { $pull: { muted_by: _id } }
-    )
+    await ChatRoom.updateOne({ _id: roomId }, { $pull: { muted_by: _id } })
+    sendToClient(_id, roomId, 2)
     return res.json({
       is_muted: false,
       message: "Unmuted"
@@ -242,18 +265,12 @@ const muteOrUnmute = async (req, res) => {
 const addMembers = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.id
-  const room = await ChatRoom.user(_id).findById(roomId).select("admin")
+  const room = await ChatRoom.findById(roomId).select("admin")
   if (!room.admin) {
     return res.status(400).json({
       message: "Room is not a group"
     })
   }
-
-  // if (room.admin.id != _id) {
-  //   return res.json({
-  //     message: "Can't update, permission denind"
-  //   })
-  // }
 
   const { members } = req.body
 
@@ -266,7 +283,7 @@ const addMembers = async (req, res) => {
   // membersJson.pop(room.members)
 
   try {
-    await ChatRoom.user(_id).updateOne(
+    await ChatRoom.updateOne(
       { _id: roomId },
       { $addToSet: { members: membersJson } }
     )
@@ -285,8 +302,9 @@ const addMembers = async (req, res) => {
     if (messages.length > 0) {
       await Message.insertMany(messages)
     }
-    const newRoom = await ChatRoom.user(_id).findById(roomId).select("-members")
-    return res.json(newRoom)
+    const roomUpdated = await findAndSendToClient(roomId, _id, 2)
+
+    return res.json(roomUpdated)
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -295,14 +313,14 @@ const addMembers = async (req, res) => {
 const removeMembers = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.id
-  const room = await ChatRoom.user(_id).findById(roomId).select("admin")
+  const room = await ChatRoom.findById(roomId)
   if (!room.admin) {
     return res.status(400).json({
       message: "Room is not a group"
     })
   }
 
-  if (room.admin.id != _id) {
+  if (room.admin != _id) {
     return res.json({
       message: "Can't update, permission denind"
     })
@@ -318,7 +336,7 @@ const removeMembers = async (req, res) => {
   const membersJson = JSON.parse(members)
 
   try {
-    await ChatRoom.user(_id).updateOne(
+    await ChatRoom.updateOne(
       { _id: roomId },
       { $pullAll: { members: membersJson } }
     )
@@ -337,8 +355,12 @@ const removeMembers = async (req, res) => {
     if (messages.length > 0) {
       await Message.insertMany(messages)
     }
-    const newRoom = await ChatRoom.user(_id).findById(roomId).select("-members")
-    return res.json(newRoom)
+    for (let i = 0; i < membersJson.length; i++) {
+      sendToClient(mongoose.Types.ObjectId(membersJson[i]), roomId, 2)
+    }
+    const roomUpdated = await findAndSendToClient(roomId, _id, 2)
+
+    return res.json(roomUpdated)
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -353,14 +375,11 @@ const joinChatRoom = async (req, res) => {
     })
   }
   try {
-    const myRoom = await ChatRoom.user(_id)
-      .findOne({ _id: roomId, members: _id })
-      .select("-members")
-    if (myRoom) return res.json(myRoom)
-    await ChatRoom.user(_id).updateOne(
-      { _id: roomId },
-      { $addToSet: { members: [_id] } }
+    const myRoom = await ChatRoom.findOne({ _id: roomId, members: _id }).select(
+      "-members"
     )
+    if (myRoom) return res.json(myRoom)
+    await ChatRoom.updateOne({ _id: roomId }, { $addToSet: { members: [_id] } })
     const user = await User.findById(_id)
     await Message.create({
       sender: user.id,
@@ -368,8 +387,9 @@ const joinChatRoom = async (req, res) => {
       room: roomId,
       text: `@${user.username} has joined this group`
     })
-    const room = await ChatRoom.user(_id).findById(roomId).select("-members")
-    return res.json(room)
+    const roomUpdated = await findAndSendToClient(roomId, _id, 2)
+
+    return res.json(roomUpdated)
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -384,16 +404,21 @@ const leaveChatRoom = async (req, res) => {
     })
   }
   try {
-    const room = await ChatRoom.user(_id).findById(roomId).select("-members")
+    const room = await ChatRoom.findById(roomId)
 
     if (room && room.admin == _id) {
       await room.delete()
       await Message.deleteMany({ room: roomId })
+      for (let i = 0; i < room.members.length; i++) {
+        const id = room.members[i]
+        console.log(id)
+        sendToClient(id, roomId, 3)
+      }
       return res.json({
         message: "Room was delete successfully"
       })
     }
-    await ChatRoom.user(_id).updateOne(
+    await ChatRoom.updateOne(
       { _id: roomId },
       { $pull: { members: { $in: [_id] } } }
     )
@@ -404,8 +429,9 @@ const leaveChatRoom = async (req, res) => {
       room: roomId,
       text: `@${user.username} has leaved this group`
     })
-    const room2 = await ChatRoom.user(_id).findById(roomId).select("-members")
-    return res.json(room2)
+    const roomUpdated = await findAndSendToClient(_id, roomId, 2)
+
+    return res.json(roomUpdated)
   } catch (error) {
     return res.status(500).json({ error })
   }
@@ -436,7 +462,7 @@ const setChatRommProfile = async (req, res) => {
   const fullPath = path.normalize(`${dir}/${filename}`)
   try {
     // delete old image
-    const oldRoom = await ChatRoom.user(_id).findById(roomId)
+    const oldRoom = await ChatRoom.findById(roomId)
     if (oldRoom.profile_url) {
       const deleteFullPath = dir + oldRoom.profile_url
       fs.unlinkSync(deleteFullPath)
@@ -447,16 +473,14 @@ const setChatRommProfile = async (req, res) => {
 
     // write
     fs.writeFileSync(fullPath, content)
-    await ChatRoom.user(_id).updateOne(
-      { _id: roomId },
-      { profile_url: filename }
-    )
+    await ChatRoom.updateOne({ _id: roomId }, { profile_url: filename })
 
     // clear tmp dir
     fs.unlinkSync(profile.path)
 
-    const newRoom = await ChatRoom.user(_id).findById(roomId).select("-members")
-    return res.json(newRoom)
+    const roomUpdated = await findAndSendToClient(roomId, _id, 2)
+
+    return res.json(roomUpdated)
   } catch (error) {
     return res.status(500).json({
       message: error
@@ -467,7 +491,7 @@ const setChatRommProfile = async (req, res) => {
 const removeChatRoomProfile = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.id
-  const oldRoom = await ChatRoom.user(_id).findById(roomId)
+  const oldRoom = await ChatRoom.findById(roomId)
   const { profile_url } = oldRoom
   if (!profile_url)
     return res.status(400).json({
@@ -475,7 +499,7 @@ const removeChatRoomProfile = async (req, res) => {
     })
 
   try {
-    await ChatRoom.user(_id).updateOne({ _id: roomId }, { profile_url: null })
+    await ChatRoom.updateOne({ _id: roomId }, { profile_url: null })
     fs.unlinkSync(`storage/group-profile/${roomId}/${profile_url}`)
   } catch (error) {
     return res.status(500).json({
@@ -483,9 +507,35 @@ const removeChatRoomProfile = async (req, res) => {
     })
   }
 
-  return res.json({
-    message: "Profile is deleted successfuly"
-  })
+  const roomUpdated = await findAndSendToClient(roomId, _id, 2)
+
+  return res.json(roomUpdated)
+}
+
+const findAndSendToClient = async (roomId, userId, action = 1) => {
+  const room2 = await ChatRoom.findById(roomId)
+    .populate([
+      {
+        path: "latest_message",
+        match: { deleted_by: { $nin: [userId] } }
+      },
+      {
+        path: "unread",
+        match: {
+          $and: [
+            { read_by: { $nin: [userId] } },
+            { deleted_by: { $nin: [userId] } },
+            { sender: { $ne: userId } }
+          ]
+        }
+      }
+    ])
+
+  for (let i = 0; i < room2.members.length; i++) {
+    const id = room2.members[i]
+    sendToClient(id, room2._id, action)
+  }
+  return roomToJson(room2, userId)
 }
 
 export {

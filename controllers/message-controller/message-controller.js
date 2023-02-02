@@ -12,7 +12,7 @@ import {
 import Media from "../../models/media-model.js"
 import FileDB from "../../models/file-model.js"
 import Voice from "../../models/voice-model.js"
-import ChatRoom from "../../models/chat-room-model.js"
+import { paginateMessageToJson } from "../../utils/msg-to-json.js"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -26,12 +26,13 @@ const getMessage = async (req, res) => {
           text: new RegExp(search, "i")
         }
       : { room: roomId, deleted_by: { $nin: [_id] } }
-  const messages = await Message.user(req.user._id).paginate(query, {
+
+  const messages = await Message.paginate(query, {
     page,
     limit,
     sort: { created_at: -1 }
   })
-  return res.json(messages)
+  return res.json(paginateMessageToJson(messages, _id))
 }
 
 const readMessage = async (req, res) => {
@@ -39,7 +40,7 @@ const readMessage = async (req, res) => {
   const { roomId } = req.params
 
   try {
-    const message = await Message.user(_id).updateMany(
+    const message = await Message.updateMany(
       {
         $and: [
           { room: roomId },
@@ -84,7 +85,7 @@ const editMessage = async (req, res) => {
   const { messageId } = req.params
   const { text } = req.body
   if (!text) return res.status(400).json({ message: "Text is required" })
-  const message = await Message.user(_id).findById(messageId)
+  const message = await Message.findById(messageId)
   if (!message)
     return res.status(400).json({ message: "Message id is invalid" })
   message.text = text
@@ -119,7 +120,7 @@ const deleteMessage = async (req, res) => {
 
   if (for_everyone != 1) {
     try {
-      await Message.user(_id).updateMany(
+      await Message.updateMany(
         { _id: { $in: messagesJson } },
         { $addToSet: { deleted_by: [_id] } }
       )
@@ -166,7 +167,7 @@ const deleteMessage = async (req, res) => {
       await Message.deleteMany({
         $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
       })
-      await Message.user(_id).updateMany(
+      await Message.updateMany(
         { $and: [{ _id: { $in: messagesJson } }] },
         { $addToSet: { deleted_by: [_id] } }
       )

@@ -14,6 +14,8 @@ import deviceRoute from "./routes/device-route.js"
 import contactRoute from "./routes/contact-route.js"
 import chatRoomRoute from "./routes/chat-room-route.js"
 import messageRoute from "./routes/message-route.js"
+import expressWs from "express-ws"
+import { wsController } from "./controllers/ws-controller.js"
 
 dotenv.config()
 connectDB()
@@ -26,6 +28,7 @@ const options = {
 }
 
 const app = express()
+expressWs(app)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -46,6 +49,9 @@ app.use("/device-login", deviceRoute)
 app.use("/contacts", contactRoute)
 app.use("/chat-rooms", chatRoomRoute)
 app.use("/messages", messageRoute)
+
+// protected websoket
+app.ws("/chats", wsController)
 
 const port = process.env.PORT || 3000
 app.listen(port, () => {
