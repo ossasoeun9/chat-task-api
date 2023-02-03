@@ -142,6 +142,8 @@ messageSchema.pre("deleteMany", function (next) {
         console.log("Message Error:", error)
         next()
       })
+  } else {
+    next()
   }
 })
 

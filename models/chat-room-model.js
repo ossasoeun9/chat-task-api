@@ -3,6 +3,10 @@ import Message from "./message-model.js"
 import User from "./user-model.js"
 import mongoosePaginate from "mongoose-paginate-v2"
 import mongooseAutoPopulate from "mongoose-autopopulate"
+import Media from "./media-model.js"
+import Url from "./url-model.js"
+import Voice from "./voice-model.js"
+import FileDB from "./file-model.js"
 
 /*
 Note
@@ -61,6 +65,13 @@ const chatRoomSchema = new mongoose.Schema(
   }
 )
 
+chatRoomSchema.set("toJSON", {
+  virtuals: true,
+  getters: true,
+})
+
+chatRoomSchema.set("toObject", { virtuals: true, getters: true })
+
 chatRoomSchema.virtual("latest_message", {
   ref: Message,
   localField: "_id",
@@ -77,21 +88,28 @@ chatRoomSchema.virtual("unread", {
   count: true,
 })
 
-chatRoomSchema.set("toJSON", {
-  virtuals: true,
-})
-
-chatRoomSchema.set("toObject", { virtuals: true })
-
 chatRoomSchema.plugin(mongooseAutoPopulate)
 chatRoomSchema.plugin(mongoosePaginate)
-const ChatRoom = mongoose.model("Chat Room", chatRoomSchema)
 
-ChatRoom.watch().on("change", (data) => {
-  const { operationType, documentKey } = data
-  if (operationType == "delete") {
-    Message.deleteMany({ room: documentKey._id })
-  }
+chatRoomSchema.pre("deleteOne", function (next) {
+  const query = this.getQuery()
+  deleteEverything(query._id)
+    .then((_) => {
+      next()
+    })
+    .catch((err) => {
+      next()
+    })
 })
+
+const deleteEverything = async (roomId) => {
+  await Message.deleteMany({ room: roomId })
+  await FileDB.deleteMany({ room: roomId })
+  await Media.deleteMany({ room: roomId })
+  await Url.deleteMany({ room: roomId })
+  await Voice.deleteMany({ room: roomId })
+}
+
+const ChatRoom = mongoose.model("Chat Room", chatRoomSchema)
 
 export default ChatRoom

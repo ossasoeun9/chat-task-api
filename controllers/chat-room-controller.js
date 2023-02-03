@@ -13,32 +13,31 @@ const getChatRoom = async (req, res) => {
   const { _id } = req.user
   const { page = 1, limit = 10 } = req.query
 
-  ChatRoom
-    .paginate(
-      { $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }] },
-      {
-        select: "-members -deleted_by",
-        sort: { latest_message: 1 },
-        populate: [
-          {
-            path: "latest_message",
-            match: { deleted_by: { $nin: [_id] } },
+  ChatRoom.paginate(
+    { $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }] },
+    {
+      select: "-members -deleted_by",
+      populate: [
+        {
+          path: "latest_message",
+          match: { deleted_by: { $nin: [_id] } },
+        },
+        {
+          path: "unread",
+          match: {
+            $and: [
+              { read_by: { $nin: [_id] } },
+              { deleted_by: { $nin: [_id] } },
+              { sender: { $ne: _id } },
+            ],
           },
-          {
-            path: "unread",
-            match: {
-              $and: [
-                { read_by: { $nin: [_id] } },
-                { deleted_by: { $nin: [_id] } },
-                { sender: { $ne: _id } },
-              ],
-            },
-          },
-        ],
-        page,
-        limit,
-      }
-    )
+        },
+      ],
+      sort: { latest_message: -1 },
+      page,
+      limit,
+    }
+  )
     .then((chats) => {
       res.json(roomPaginateToJson(chats, _id))
     })
@@ -408,8 +407,7 @@ const leaveChatRoom = async (req, res) => {
     const room = await ChatRoom.findById(roomId)
 
     if (room && room.admin == _id) {
-      await room.delete()
-      await Message.deleteMany({ room: roomId })
+      await ChatRoom.deleteOne({ _id: roomId })
       for (let i = 0; i < room.members.length; i++) {
         const id = room.members[i]
         console.log(id)
