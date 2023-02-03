@@ -1,5 +1,7 @@
 import mongoose from "mongoose"
 import mongoosePaginate from "mongoose-paginate-v2"
+import fs from "fs"
+import path from "path"
 
 const fileSchema = mongoose.Schema(
   {
@@ -7,23 +9,39 @@ const fileSchema = mongoose.Schema(
     size: Number,
     owner: {
       type: mongoose.Types.ObjectId,
-      ref: "User"
+      ref: "User",
     },
     room: {
       type: mongoose.Types.ObjectId,
-      ref: "Chat Room"
-    }
+      ref: "Chat Room",
+    },
   },
   {
     timestamps: {
       createdAt: "created_at",
-      updatedAt: "updated_at"
+      updatedAt: "updated_at",
     },
-    versionKey: false
+    versionKey: false,
   }
 )
 
-mongoose.plugin(mongoosePaginate)
+fileSchema.plugin(mongoosePaginate)
+
+fileSchema.pre("deleteMany", function (next) {
+  const query = this.getQuery()
+  FileDB.find(query)
+    .then((files) => {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        fs.unlinkSync(path.normalize(`storage/files/${file.room}/${file.filename}`))
+      }
+      next()
+    })
+    .catch((error) => {
+      console.log("File DB Error:", error)
+      next()
+    })
+})
 
 const FileDB = mongoose.model("File DB", fileSchema)
 export default FileDB

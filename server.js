@@ -15,7 +15,8 @@ import contactRoute from "./routes/contact-route.js"
 import chatRoomRoute from "./routes/chat-room-route.js"
 import messageRoute from "./routes/message-route.js"
 import expressWs from "express-ws"
-import { wsController } from "./controllers/ws-controller.js"
+import { wsController } from "./controllers/ws-chats-controller.js"
+import { wsMessageController } from "./controllers/ws-message-controller.js"
 
 dotenv.config()
 connectDB()
@@ -52,6 +53,7 @@ app.use("/messages", messageRoute)
 
 // protected websoket
 app.ws("/chats", wsController)
+app.ws("/message", wsMessageController)
 
 const port = process.env.PORT || 3000
 app.listen(port, () => {

@@ -4,17 +4,17 @@ dotenv.config()
 const apiHost = process.env.API_HOST
 
 const paginateMessageToJson = (datas, userId) => {
-    const {meta, data} = datas
-    const newData = messagesToJson(data, userId)
-    return {
-        data: newData,
-        meta
-    }
+  const { meta, data } = datas
+  const newData = messagesToJson(data, userId)
+  return {
+    data: newData,
+    meta,
+  }
 }
 
 const messagesToJson = (data, userId) => {
   let listMsg = []
-  for(let i=0; i<data.length; i++) {
+  for (let i = 0; i < data.length; i++) {
     listMsg.push(msgToJson(data[i], userId))
   }
   return listMsg
@@ -34,20 +34,29 @@ const msgToJson = (message, userId) => {
     files,
     read_by,
     created_at,
-    updated_at
+    updated_at,
   } = message
-  let jsonMessage = { _id, type }
+  let jsonMessage = { _id }
 
-  const isMe = sender._id == userId
-
-  if (!isMe) {
-    jsonMessage.sender = sender
+  if (type) {
+    jsonMessage.type = type
   }
 
-  jsonMessage.is_me = isMe
+  if (sender) {
+    const isMe = sender._id == userId
+
+    if (!isMe) {
+      jsonMessage.sender = sender
+    }
+
+    jsonMessage.is_me = isMe
+    if (isMe) {
+      jsonMessage.seen = read_by.length > 0
+    }
+  }
 
   if (ref_message) {
-    jsonMessage.ref_message = ref_message
+    jsonMessage.ref_message = msgToJson(ref_message, userId)
   }
 
   if (text) {
@@ -62,10 +71,10 @@ const msgToJson = (message, userId) => {
 
   if (media && media.length > 0) {
     jsonMessage.media = media
-    for(let i = 0; i < jsonMessage.media.length; i++) {
-        const element = jsonMessage.media[i]
-        jsonMessage.media[i].url = `${apiHost}/media/${room}/${element.filename}`
-        delete jsonMessage.media[i].filename
+    for (let i = 0; i < jsonMessage.media.length; i++) {
+      const element = jsonMessage.media[i]
+      jsonMessage.media[i].url = `${apiHost}/media/${room}/${element.filename}`
+      delete jsonMessage.media[i].filename
     }
   }
 
@@ -82,14 +91,14 @@ const msgToJson = (message, userId) => {
     jsonMessage.url = url
   }
 
-  if (isMe) {
-    jsonMessage.seen = read_by.length > 0
+  if (created_at) {
+    jsonMessage.create_at = created_at
   }
-
-  jsonMessage.create_at = created_at,
-  jsonMessage.update_at = updated_at
+  if (updated_at) {
+    jsonMessage.update_at = updated_at
+  }
 
   return jsonMessage
 }
 
-export {paginateMessageToJson, messagesToJson, msgToJson}
+export { paginateMessageToJson, messagesToJson, msgToJson }

@@ -12,6 +12,7 @@ import FileDB from "../../models/file-model.js"
 import Url from "../../models/url-model.js"
 import ChatRoom from "../../models/chat-room-model.js"
 import { msgToJson } from "../../utils/msg-to-json.js"
+import { sendMessageToClient } from "../ws-message-controller.js"
 
 const sendText = async (req, res) => {
   const { _id } = req.user
@@ -24,11 +25,9 @@ const sendText = async (req, res) => {
       type: 2,
       text,
       room: roomId,
-      ref_message
+      ref_message,
     })
-    ChatRoom.user(req.user._id)
-      .findById(roomId)
-      .then((data) => {})
+    sendMessageToClient(message, roomId)
     return res.json(msgToJson(message, _id))
   } catch (error) {
     return res.status(500).json({ error })
@@ -42,16 +41,17 @@ const forwardMessage = async (req, res) => {
   if (!ref_message)
     return res.status(400).json({ message: "Ref message is required" })
   const message = await Message.findById(ref_message)
-  if (message.type == 3) {
+  if (message && message.type == 3 && message.ref_message) {
     ref_message = message.ref_message._id
   }
-  const newMessage = await Message.user(_id).create({
+  const newMessage = await Message.create({
     sender: _id,
     room: roomId,
     ref_message,
-    type: 3
+    type: 3,
   })
-  return res.json(newMessage)
+  sendMessageToClient(newMessage, roomId)
+  return res.json(msgToJson(newMessage, _id))
 }
 
 const sendVoice = async (req, res) => {
@@ -61,7 +61,7 @@ const sendVoice = async (req, res) => {
 
   if (!voice)
     return res.status(400).json({
-      message: "Voice is required"
+      message: "Voice is required",
     })
 
   const dir = `storage/voice-messages/${roomId}/`
@@ -94,19 +94,20 @@ const sendVoice = async (req, res) => {
       size,
       duration,
       room: roomId,
-      owner: _id
+      owner: _id,
     })
 
-    const newMessage = await Message.user(_id).create({
+    const newMessage = await Message.create({
       sender: _id,
       room: roomId,
       type: 4,
-      voice: newVoice._id
+      voice: newVoice._id,
     })
-    return res.json(newMessage)
+    sendMessageToClient(newMessage, roomId)
+    return res.json(msgToJson(newMessage, _id))
   } catch (error) {
     return res.status(500).json({
-      message: error
+      message: error,
     })
   }
 }
@@ -127,25 +128,27 @@ const sendMedia = async (req, res) => {
         resMedia.push(sss)
       }
       const newMedia = await Media.insertMany(resMedia)
-      const newMessage = await Message.user(_id).create({
+      const newMessage = await Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 5,
-        media: newMedia
+        media: newMedia,
       })
-      return res.json(newMessage)
+      sendMessageToClient(newMessage, roomId)
+      return res.json(msgToJson(newMessage, _id))
     } else {
       const resMedia = await storeMedia(media.path, roomId, _id)
       const newMedia = await Media.create(resMedia)
-      const newMessage = await Message.user(_id).create({
+      const newMessage = await Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 5,
-        media: [newMedia._id]
+        media: [newMedia._id],
       })
-      return res.json(newMessage)
+      sendMessageToClient(newMessage, roomId)
+      return res.json(msgToJson(newMessage, _id))
     }
   } catch (error) {
     return res.status(500).json({ error })
@@ -183,14 +186,16 @@ const storeMedia = async (filePath, roomId, userId) => {
       duration,
       is_video,
       room: roomId,
-      owner: userId
+      owner: userId,
     }
   }
 
   return {
     filename,
     size,
-    is_video
+    is_video,
+    room: roomId,
+    owner: userId,
   }
 }
 
@@ -210,25 +215,27 @@ const sendFiles = async (req, res) => {
         resFiles.push(sss)
       }
       const newFile = await FileDB.insertMany(resFiles)
-      const newMessage = await Message.user(_id).create({
+      const newMessage = await Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 6,
-        files: newFile
+        files: newFile,
       })
+      sendMessageToClient(newMessage, roomId)
       return res.json(newMessage)
     } else {
       const resFile = storeFile(files.path, roomId, _id)
       const newFile = await FileDB.create(resFile)
-      const newMessage = await Message.user(_id).create({
+      const newMessage = await Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 6,
-        files: [newFile._id]
+        files: [newFile._id],
       })
-      return res.json(newMessage)
+      sendMessageToClient(newMessage, roomId)
+      return res.json(msgToJson(newMessage, _id))
     }
   } catch (error) {
     return res.status(500).json({ error })
@@ -261,7 +268,7 @@ const storeFile = (filePath, roomId, userId) => {
     filename,
     size,
     room: roomId,
-    owner: userId
+    owner: userId,
   }
 }
 
@@ -276,15 +283,16 @@ const sendUrl = async (req, res) => {
       link: url,
       is_preview: is_preview == 1,
       room: req.params.roomId,
-      owner: _id
+      owner: _id,
     })
-    const message = await Message.user(_id).create({
+    const message = await Message.create({
       sender: _id,
       url: newUrl,
       text,
-      room: req.params.roomId
+      room: req.params.roomId,
     })
-    return res.json(message)
+    sendMessageToClient(message, req.params.roomId)
+    return res.json(msgToJson(message, _id))
   } catch (error) {
     return res.status(500).json({ error })
   }

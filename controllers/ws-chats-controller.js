@@ -9,6 +9,7 @@ const wsController = async (ws, req) => {
   clients[_id] = ws
   console.log("client:", _id, "connected")
   ws.on("close", async (message) => {
+    delete clients[_id]
     console.log("client:", _id, "disconnected")
     await User.updateOne({ _id }, { is_online: false })
   })
@@ -18,7 +19,7 @@ const wsController = async (ws, req) => {
 
 const sendToClient = (client, roomId, action = 1) => {
   const ws = clients[client]
-  if (ws && ws.readyState) {
+  if (ws) {
     if (action == 1 || action == 2) {
       ChatRoom.findOne({
         _id: roomId,
@@ -42,8 +43,8 @@ const sendToClient = (client, roomId, action = 1) => {
         ])
         .then((s) => {
           if (s) {
-            const data = roomToJson(s, client.valueOf())
-            ws.send(JSON.stringify({ action, data }))
+            const room = roomToJson(s, client.valueOf())
+            ws.send(JSON.stringify({ action, data: room }))
           } else {
             ws.send(JSON.stringify({ action: 3, data: { _id: roomId } }))
           }

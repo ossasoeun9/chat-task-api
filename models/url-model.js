@@ -7,19 +7,19 @@ const urlSchema = mongoose.Schema(
     is_preview: Boolean,
     owner: {
       type: mongoose.Types.ObjectId,
-      ref: "User"
+      ref: "User",
     },
     room: {
       type: mongoose.Types.ObjectId,
-      ref: "Chat Room"
-    }
+      ref: "Chat Room",
+    },
   },
   {
     timestamps: {
       createdAt: "created_at",
-      updatedAt: "updated_at"
+      updatedAt: "updated_at",
     },
-    versionKey: false
+    versionKey: false,
   }
 )
 

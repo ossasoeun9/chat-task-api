@@ -1,5 +1,3 @@
-import path from "path"
-import fs from "fs"
 import Message from "../../models/message-model.js"
 import {
   forwardMessage,
@@ -7,12 +5,16 @@ import {
   sendMedia,
   sendText,
   sendUrl,
-  sendVoice
+  sendVoice,
 } from "./send-message-controller.js"
-import Media from "../../models/media-model.js"
-import FileDB from "../../models/file-model.js"
-import Voice from "../../models/voice-model.js"
 import { paginateMessageToJson } from "../../utils/msg-to-json.js"
+import {
+  sendMesToClient,
+  sendMessageToClient,
+  sendMessagesToClient,
+} from "../ws-message-controller.js"
+import { sendToClient } from "../ws-chats-controller.js"
+import ChatRoom from "../../models/chat-room-model.js"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -23,14 +25,14 @@ const getMessage = async (req, res) => {
       ? {
           room: roomId,
           deleted_by: { $nin: [_id] },
-          text: new RegExp(search, "i")
+          text: new RegExp(search, "i"),
         }
       : { room: roomId, deleted_by: { $nin: [_id] } }
 
   const messages = await Message.paginate(query, {
     page,
     limit,
-    sort: { created_at: -1 }
+    sort: { created_at: -1 },
   })
   return res.json(paginateMessageToJson(messages, _id))
 }
@@ -40,19 +42,39 @@ const readMessage = async (req, res) => {
   const { roomId } = req.params
 
   try {
+    const oldMessage = await Message.find({
+      $and: [
+        { room: roomId },
+        { sender: { $ne: _id } },
+        { read_by: { $nin: [_id] } },
+        { deleted_by: { $nin: [_id] } },
+      ],
+    }).select("_id")
+    const messageIds = oldMessage.map((mes) => mes._id)
     const message = await Message.updateMany(
       {
         $and: [
           { room: roomId },
           { sender: { $ne: _id } },
           { read_by: { $nin: [_id] } },
-          { deleted_by: { $nin: [_id] } }
-        ]
+          { deleted_by: { $nin: [_id] } },
+        ],
       },
       {
-        $addToSet: { read_by: [_id] }
+        $addToSet: { read_by: [_id] },
       }
     )
+    ChatRoom.findById(roomId).then((data) => {
+      for (let i = 0; i < data.people.length; i++) {
+        sendToClient(data.people[i]._id, roomId, 2)
+      }
+      for (let i = 0; i < data.members.length; i++) {
+        sendToClient(data.members[i], roomId, 2)
+      }
+    })
+    Message.find({ _id: messageIds }).then((mes) => {
+      sendMessagesToClient(mes, roomId, 2)
+    })
     return res.json(message)
   } catch (error) {
     return res.status(500).json({ error })
@@ -90,6 +112,7 @@ const editMessage = async (req, res) => {
     return res.status(400).json({ message: "Message id is invalid" })
   message.text = text
   const newMessage = await message.save()
+  sendMessageToClient(message, message.room, 2)
   return res.json(newMessage)
 }
 
@@ -108,6 +131,7 @@ const crearHistory = async (req, res) => {
 
 const deleteMessage = async (req, res) => {
   const { _id } = req.user
+  const { roomId } = req.params
   const { messages, for_everyone } = req.body
   if (!(messages && for_everyone))
     return res
@@ -124,53 +148,21 @@ const deleteMessage = async (req, res) => {
         { _id: { $in: messagesJson } },
         { $addToSet: { deleted_by: [_id] } }
       )
+      sendMessageToClient({ ids: messagesJson }, roomId, 3)
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
     }
   } else {
     try {
-      const messages = await Message.find({
-        $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
-      })
-      for (var i = 0; i < messages.length; i++) {
-        const { type, room, media, files, voice } = messages[i]
-        if (type == 4) {
-          fs.unlinkSync(
-            path.normalize(`storage/voice-messages/${room}/${voice.filename}`)
-          )
-          await Voice.deleteOne({ _id: voice._id })
-        }
-        if (type == 5) {
-          for (var f = 0; f < media.length; f++) {
-            const md = media[f]
-            fs.unlinkSync(
-              path.normalize(`storage/media/${room}/${md.filename}`)
-            )
-          }
-          await Media.deleteMany({
-            _id: { $in: media.map((v) => v._id.valueOf()) }
-          })
-        }
-        if (type == 6) {
-          for (var f = 0; f < files.length; f++) {
-            const fi = files[f]
-            fs.unlinkSync(
-              path.normalize(`storage/files/${room}/${fi.filename}`)
-            )
-          }
-          await FileDB.deleteMany({
-            _id: { $in: files.map((v) => v._id.valueOf()) }
-          })
-        }
-      }
       await Message.deleteMany({
-        $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
+        $and: [{ _id: { $in: messagesJson } }, { sender: _id }],
       })
       await Message.updateMany(
         { $and: [{ _id: { $in: messagesJson } }] },
         { $addToSet: { deleted_by: [_id] } }
       )
+      sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
@@ -184,5 +176,5 @@ export {
   sendMessage,
   editMessage,
   crearHistory,
-  deleteMessage
+  deleteMessage,
 }
