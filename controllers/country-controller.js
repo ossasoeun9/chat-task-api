@@ -9,7 +9,8 @@ const getCurrentLocal = async (req, res) => {
   const ip_address = req.headers["x-forwarded-for"]
   try {
     const resonse = await axios.get(`${geoipApi}&ip_address=${ip_address}`)
-    return res.json(resonse.data)
+    const country = await Country.findOne({ code: resonse.data.country_code })
+    return res.json(country)
   } catch (error) {
     return res.json({ error })
   }
