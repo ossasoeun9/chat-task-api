@@ -1,4 +1,5 @@
 import otpGenerator from "otp-generator"
+import dotenv from "dotenv"
 import bcryptjs from "bcryptjs"
 import axios from "axios"
 import {
@@ -12,6 +13,9 @@ import jsonwebtoken from "jsonwebtoken"
 import { generateUsername } from "unique-username-generator"
 import User from "../models/user-model.js"
 import DeviceLoggin from "../models/device-loggin-model.js"
+
+dotenv.config()
+const geoipApi = process.env.GEOIP_API
 
 const requestOTP = async (req, res) => {
   const { phone_number, country_id } = req.body
@@ -177,7 +181,7 @@ const storeLogin = async (req, userId, token) => {
   if (!oldDevice) {
     try {
       const resonse = await axios.get(
-        `https://ipgeolocation.abstractapi.com/v1/?api_key=2141d285a889453486ee7df47ba76aad&ip_address=${ip_address}`
+        `${geoipApi}&ip_address=${ip_address}`
       )
       await DeviceLoggin.create({
         ip_address,
