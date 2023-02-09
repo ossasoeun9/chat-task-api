@@ -50,7 +50,7 @@ const requestOTP = async (req, res) => {
       phoneNumber: newPhoneNumber,
     })
     .then((response) => {
-      return res.json({
+      return res.status(response.status).json({
         session_info: response.data.sessionInfo,
       })
     })
