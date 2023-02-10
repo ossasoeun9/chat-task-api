@@ -168,7 +168,7 @@ const refreshToken = async (req, res) => {
 
 const storeLogin = async (req, userId, token) => {
   const user = userId
-  const ip_address = req.headers["x-forwarded-for"]
+  const ip_address = req.headers["x-forwarded-for"].split(",")[0]
   const user_agent = req.headers["user-agent"]
   const oldDevice = await DeviceLogin.findOne({
     ip_address,
@@ -181,13 +181,15 @@ const storeLogin = async (req, userId, token) => {
       const resonse = await axios.get(
         `${geoipApi}&ip_address=${ip_address}`
       )
-      await DeviceLogin.create({
-        ip_address,
-        user_agent,
-        geoip: resonse.data,
-        user,
-        token,
-      })
+      if (resonse.status == 200) {
+        await DeviceLogin.create({
+          ip_address,
+          user_agent,
+          geoip: resonse.data,
+          user,
+          token,
+        })
+      }
     } catch (error) {
       console.log(error)
     }
