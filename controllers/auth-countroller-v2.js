@@ -50,16 +50,12 @@ const requestOTP = async (req, res) => {
       phoneNumber: newPhoneNumber
     })
     .then((response) => {
-      if (response.status == 200) {
-        return res.json({
-          session_info: response.data.sessionInfo
-        })
-      } else {
-        return res.status(500).json({ message: response.response.data.message })
-      }
+      return res.json({
+        session_info: response.data.sessionInfo
+      })
     })
     .catch((error) => {
-      return res.status(500).json({ message: error.response.data.message })
+      return res.status(500).json({ message: error.message })
     })
 }
 
@@ -115,11 +111,12 @@ const verifyOTP = async (req, res) => {
         token_type: "Bearer",
         expires_in: expDate
       })
-    }).catch((error) => {
-      return res.status(500).json({ message: error.response.data.message })
     })
     .catch((error) => {
-      return res.status(500).json({message: error})
+      return res.status(500).json({ message: error.message })
+    })
+    .catch((error) => {
+      return res.status(500).json({ message: error })
     })
 }
 
@@ -170,7 +167,7 @@ const refreshToken = async (req, res) => {
 
 const storeLogin = async (req, userId, token) => {
   const user = userId
-  const ip_address = req.headers["x-forwarded-for"].split(",")[0]
+  const ip_address = req.headers["x-forwarded-for"] && req.headers["x-forwarded-for"].split(",")[0]
   const user_agent = req.headers["user-agent"]
   const oldDevice = await DeviceLogin.findOne({
     ip_address,
