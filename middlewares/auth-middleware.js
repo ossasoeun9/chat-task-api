@@ -10,13 +10,13 @@ const verifyToken = (req, res, next) => {
 
   if (!token)
     return res.status(401).json({
-      message: "Unauthenecated"
+      message: "Unauthenticated"
     })
 
   jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY, (err, data) => {
     if (err)
       return res.status(401).json({
-        message: "Unauthenecated"
+        message: "Unauthenticated"
       })
 
     user = data.user

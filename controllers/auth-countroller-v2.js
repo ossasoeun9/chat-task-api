@@ -90,7 +90,7 @@ const verifyOTP = async (req, res) => {
       }
 
       const accessToken = generateAccessToken(user || newUser, "7d")
-      const refreshToken = generateRefreshToken(user || newUser, "90d")
+      const refreshToken = generateRefreshToken(user || newUser, "30d")
 
       let expDate = new Date()
       expDate.setDate(expDate.getDate() + 7)
@@ -123,25 +123,25 @@ const verifyOTP = async (req, res) => {
 const refreshToken = async (req, res) => {
   const { refresh_token } = req.body
   if (!refresh_token)
-    return res.status(401).json({
+    return res.status(400).json({
       message: "Refresh token is required"
     })
 
   jsonwebtoken.verify(refresh_token, refreshTokenKey, async (error, data) => {
     if (error)
-      return res.status(400).json({
-        message: error
+      return res.status(401).json({
+        message: "Unauthenticated",
       })
 
     const user = await User.findById(data.user._id).populate("country")
 
     if (!user)
       return res.status(401).json({
-        message: "User not found"
+        message: "Unauthenticated"
       })
 
     const accessToken = generateAccessToken(user, "7d")
-    const refreshToken = generateRefreshToken(user, "90d")
+    const refreshToken = generateRefreshToken(user, "30d")
 
     let expDate = new Date()
     expDate.setDate(expDate.getDate() + 7)
