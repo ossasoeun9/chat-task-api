@@ -50,9 +50,13 @@ const requestOTP = async (req, res) => {
       phoneNumber: newPhoneNumber
     })
     .then((response) => {
-      return res.status(response.status).json({
-        session_info: response.data.sessionInfo
-      })
+      if (response.status == 200) {
+        return res.json({
+          session_info: response.data.sessionInfo
+        })
+      } else {
+        return res.status(500).json({ message: response.response.data.message })
+      }
     })
     .catch((error) => {
       return res.status(500).json({ message: error.response.data.message })
