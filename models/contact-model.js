@@ -52,7 +52,7 @@ contactSchema.set("toJSON", {
     delete ret.id
     delete ret.__v
     return ret
-  }
+  },
 })
 
 contactSchema.plugin(mongoosePaginate)
