@@ -1,6 +1,7 @@
 import dotenv from "dotenv"
 import axios from "axios"
 import Country from "../models/country-model.js"
+import JSONStream from "JSONStream"
 
 dotenv.config()
 const geoipApi = process.env.GEOIP_API
@@ -20,10 +21,9 @@ const getCurrentLocal = async (req, res) => {
 
 const fetchPhoneCode = async (req, res) => {
   try {
-    const phoneCodes = await Country.find()
-    res.json(phoneCodes)
+    Country.find().cursor().pipe(JSONStream.stringify()).pipe(res.type("json"))
   } catch (error) {
-    res.send({
+    res.status(500).send({
       message: error
     })
   }
