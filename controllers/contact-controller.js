@@ -6,13 +6,14 @@ const hideUserFiled = "-created_at -country"
 
 const getContacts = async (req, res) => {
   const { contact_ids } = req.body
+  const { blocked = false } = req.query
 
   if (contact_ids) {
     const ids = JSON.parse(contact_ids)
     try {
       Contact.find({
         owner: req.user._id,
-        is_blocked: false,
+        is_blocked: blocked,
         _id: { $in: ids }
       })
         .populate("user")
@@ -29,9 +30,8 @@ const getContacts = async (req, res) => {
   try {
     Contact.find({
       owner: req.user._id,
-      is_blocked: false
-    })
-      .populate("user")
+      is_blocked: blocked
+    }).populate("user")
       .cursor()
       .pipe(JSONStream.stringify())
       .pipe(res.type("json"))
@@ -189,6 +189,5 @@ export {
   createOrEditContact,
   syncContacts,
   deleteContact,
-  blockContact,
-  getBlockedContacts
+  blockContact
 }
