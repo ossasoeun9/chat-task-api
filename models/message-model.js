@@ -27,10 +27,7 @@ const messageSchema = mongoose.Schema(
     sender: {
       type: mongoose.Types.ObjectId,
       ref: User,
-      required: true,
-      autopopulate: {
-        select: "_id first_name last_name profile_url is_online",
-      },
+      required: true
     },
     ref_message: {
       type: mongoose.Types.ObjectId,

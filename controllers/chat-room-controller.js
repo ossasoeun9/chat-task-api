@@ -29,7 +29,16 @@ const getChatRoom = async (req, res) => {
       })
       .populate({
         path: "latest_message",
-        match: { deleted_by: { $nin: [_id] } }
+        match: { deleted_by: { $nin: [_id] } },
+        populate: {
+          path: "sender",
+          select: "_id first_name last_name profile_url is_online phone_number",
+          populate: {
+            path: "contact",
+            select: "-created_at -updated_at",
+            match: { owner: {$eq: _id} }
+          }
+        }
       })
       .populate({
         path: "unread",
