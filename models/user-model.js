@@ -55,6 +55,7 @@ const userSchema = mongoose.Schema(
   }
 )
 
+userSchema.set("toObject", { virtuals: true, getters: true })
 userSchema.set("toJSON", {
   transform: (_, ret, __) => {
     const { _id, profile_url } = ret
@@ -64,6 +65,15 @@ userSchema.set("toJSON", {
     }
     return ret
   },
+  virtuals: true,
+  getters: true
+})
+
+userSchema.virtual("contact", {
+  ref: "Contact",
+  localField: "phone_number",
+  foreignField: "phone_number",
+  justOne: true,
 })
 
 userSchema.plugin(mongooseAutoPopulate)

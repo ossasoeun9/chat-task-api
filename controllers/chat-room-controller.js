@@ -5,51 +5,59 @@ import ChatRoom from "../models/chat-room-model.js"
 import Message from "../models/message-model.js"
 import User from "../models/user-model.js"
 import messageValidator from "../utils/message-validator.js"
-import { roomPaginateToJson, roomToJson } from "../utils/chat-room-to-json.js"
+import { roomToJson } from "../utils/chat-room-to-json.js"
 import { sendToClient } from "./ws-chats-controller.js"
 import mongoose from "mongoose"
+import JSONStream from "JSONStream"
+import es from "event-stream"
 
 const getChatRoom = async (req, res) => {
   const { _id } = req.user
-  const { page = 1, limit = 10 } = req.query
 
-  ChatRoom.paginate(
-    { $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }] },
-    {
-      select: "-members -deleted_by",
-      populate: [
-        {
-          path: "latest_message",
-          match: { deleted_by: { $nin: [_id] } },
-        },
-        {
-          path: "unread",
-          match: {
-            $and: [
-              { read_by: { $nin: [_id] } },
-              { deleted_by: { $nin: [_id] } },
-              { sender: { $ne: _id } },
-            ],
-          },
-        },
-      ],
-      sort: { latest_message: -1 },
-      page,
-      limit,
-    }
-  )
-    .then((chats) => {
-      res.json(roomPaginateToJson(chats, _id))
+  try {
+    ChatRoom.find({
+      $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }]
     })
-    .catch((error) => {
-      res.status(500).json({ error })
-    })
+      .populate({
+        path: "people",
+        select: "_id first_name last_name profile_url is_online phone_number",
+        populate: {
+          path: "contact",
+          select: "-created_at -updated_at",
+          match: { owner: {$eq: _id} }
+        }
+      })
+      .populate({
+        path: "latest_message",
+        match: { deleted_by: { $nin: [_id] } }
+      })
+      .populate({
+        path: "unread",
+        match: {
+          $and: [
+            { read_by: { $nin: [_id] } },
+            { deleted_by: { $nin: [_id] } },
+            { sender: { $ne: _id } }
+          ]
+        }
+      })
+      .cursor()
+      .pipe(
+        es.map(function (data, cb) {
+          cb(null, roomToJson(data, _id))
+        })
+      )
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
+  } catch (error) {
+    res.status(500).json({ error })
+  }
 }
 
 const getChatRoomDetail = async (req, res) => {
   try {
     const room = await ChatRoom.findOne({
-      _id: req.params.id,
+      _id: req.params.id
     })
 
     return res.json(roomToJson(room))
@@ -86,13 +94,13 @@ const ceateTwoPeopleRoom = async (req, res) => {
   }
 
   const room0 = await ChatRoom.findOne({
-    people: [sender, receiver],
+    people: [sender, receiver]
   })
     .select("-members")
     .populate([
       {
         path: "latest_message",
-        match: { deleted_by: { $nin: [sender] } },
+        match: { deleted_by: { $nin: [sender] } }
       },
       {
         path: "unread",
@@ -100,10 +108,10 @@ const ceateTwoPeopleRoom = async (req, res) => {
           $and: [
             { read_by: { $nin: [sender] } },
             { deleted_by: { $nin: [sender] } },
-            { sender: { $ne: sender } },
-          ],
-        },
-      },
+            { sender: { $ne: sender } }
+          ]
+        }
+      }
     ])
 
   if (room0) {
@@ -121,18 +129,18 @@ const ceateTwoPeopleRoom = async (req, res) => {
   try {
     const room = await ChatRoom.create({
       type: 2,
-      people: [sender, receiver],
+      people: [sender, receiver]
     })
     await Message.create({
       sender,
       room: room._id,
       type: message_type,
-      text: text,
+      text: text
     })
     const room2 = await ChatRoom.findById(room._id).populate([
       {
         path: "latest_message",
-        match: { deleted_by: { $nin: [sender] } },
+        match: { deleted_by: { $nin: [sender] } }
       },
       {
         path: "unread",
@@ -140,17 +148,17 @@ const ceateTwoPeopleRoom = async (req, res) => {
           $and: [
             { read_by: { $nin: [sender] } },
             { deleted_by: { $nin: [sender] } },
-            { sender: { $ne: sender } },
-          ],
-        },
-      },
+            { sender: { $ne: sender } }
+          ]
+        }
+      }
     ])
     sendToClient(sender, room._id)
     sendToClient(receiver, room._id)
     return res.json(roomToJson(room2, sender))
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
 }
@@ -160,13 +168,13 @@ const createGroupChat = async (req, res) => {
 
   if (!name) {
     return res.status(400).json({
-      message: "Name is required",
+      message: "Name is required"
     })
   }
 
   if (!members) {
     return res.status(400).json({
-      message: "Members is required",
+      message: "Members is required"
     })
   }
 
@@ -174,7 +182,7 @@ const createGroupChat = async (req, res) => {
 
   if (!Array.isArray(membersJson)) {
     return res.status(400).json({
-      message: "Members field must be array or list",
+      message: "Members field must be array or list"
     })
   }
 
@@ -186,20 +194,20 @@ const createGroupChat = async (req, res) => {
       type: room_type,
       members: membersJson,
       admin: userId,
-      name,
+      name
     })
     const user = await User.findById(userId).select("username")
     await Message.create({
       sender: userId,
       room: _id,
       type: 1,
-      text: `@${user.username} created this group`,
+      text: `@${user.username} created this group`
     })
     const room2 = await findAndSendToClient(_id, userId)
     return res.json(room2)
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
 }
@@ -210,20 +218,20 @@ const editChatRoom = async (req, res) => {
   const room = await ChatRoom.findById(roomId)
   if (!room.admin) {
     return res.status(400).json({
-      message: "Room is not a group",
+      message: "Room is not a group"
     })
   }
 
   if (room.admin != _id) {
     return res.json({
-      message: "Can't update, permission denind",
+      message: "Can't update, permission denind"
     })
   }
 
   const { name, description } = req.body
   if (!name) {
     return res.status(400).json({
-      name: "Name is required",
+      name: "Name is required"
     })
   }
 
@@ -242,7 +250,7 @@ const muteOrUnmute = async (req, res) => {
   const room = await ChatRoom.findById(roomId)
   if (!room) {
     return res.status(400).json({
-      message: "Invalid id",
+      message: "Invalid id"
     })
   }
   if (!room.is_muted) {
@@ -250,14 +258,14 @@ const muteOrUnmute = async (req, res) => {
     sendToClient(_id, roomId, 2)
     return res.json({
       is_muted: true,
-      message: "muted",
+      message: "muted"
     })
   } else {
     await ChatRoom.updateOne({ _id: roomId }, { $pull: { muted_by: _id } })
     sendToClient(_id, roomId, 2)
     return res.json({
       is_muted: false,
-      message: "Unmuted",
+      message: "Unmuted"
     })
   }
 }
@@ -268,7 +276,7 @@ const addMembers = async (req, res) => {
   const room = await ChatRoom.findById(roomId).select("admin")
   if (!room.admin) {
     return res.status(400).json({
-      message: "Room is not a group",
+      message: "Room is not a group"
     })
   }
 
@@ -276,7 +284,7 @@ const addMembers = async (req, res) => {
 
   if (!members) {
     return res.status(400).json({
-      message: "Member is required",
+      message: "Member is required"
     })
   }
   const membersJson = JSON.parse(members)
@@ -296,7 +304,7 @@ const addMembers = async (req, res) => {
         type: 1,
         text: `@${user.username} added @${v.username} to this group`,
         room: roomId,
-        sender: _id,
+        sender: _id
       }
     })
     if (messages.length > 0) {
@@ -316,13 +324,13 @@ const removeMembers = async (req, res) => {
   const room = await ChatRoom.findById(roomId)
   if (!room.admin) {
     return res.status(400).json({
-      message: "Room is not a group",
+      message: "Room is not a group"
     })
   }
 
   if (room.admin != _id) {
     return res.json({
-      message: "Can't update, permission denind",
+      message: "Can't update, permission denind"
     })
   }
 
@@ -330,7 +338,7 @@ const removeMembers = async (req, res) => {
 
   if (!members) {
     return res.status(400).json({
-      message: "Member is required",
+      message: "Member is required"
     })
   }
   const membersJson = JSON.parse(members)
@@ -349,7 +357,7 @@ const removeMembers = async (req, res) => {
         type: 1,
         text: `@${user.username} removed @${v.username} from this group`,
         room: roomId,
-        sender: _id,
+        sender: _id
       }
     })
     if (messages.length > 0) {
@@ -371,7 +379,7 @@ const joinChatRoom = async (req, res) => {
   const roomId = req.params.id
   if (!roomId) {
     return res.status(400).json({
-      message: "Room ID is required",
+      message: "Room ID is required"
     })
   }
   try {
@@ -385,7 +393,7 @@ const joinChatRoom = async (req, res) => {
       sender: user.id,
       type: 1,
       room: roomId,
-      text: `@${user.username} has joined this group`,
+      text: `@${user.username} has joined this group`
     })
     const roomUpdated = await findAndSendToClient(roomId, _id, 2)
 
@@ -400,7 +408,7 @@ const leaveChatRoom = async (req, res) => {
   const roomId = req.params.id
   if (!roomId) {
     return res.status(400).json({
-      message: "Room ID is required",
+      message: "Room ID is required"
     })
   }
   try {
@@ -414,7 +422,7 @@ const leaveChatRoom = async (req, res) => {
         sendToClient(id, roomId, 3)
       }
       return res.json({
-        message: "Room was delete successfully",
+        message: "Room was delete successfully"
       })
     }
     await ChatRoom.updateOne(
@@ -426,7 +434,7 @@ const leaveChatRoom = async (req, res) => {
       sender: user.id,
       type: 1,
       room: roomId,
-      text: `@${user.username} has leaved this group`,
+      text: `@${user.username} has leaved this group`
     })
     const roomUpdated = await findAndSendToClient(_id, roomId, 2)
 
@@ -443,7 +451,7 @@ const setChatRommProfile = async (req, res) => {
 
   if (!profile)
     return res.status(400).json({
-      message: "Profile is required",
+      message: "Profile is required"
     })
 
   const dir = `storage/group-profile/${roomId}/`
@@ -482,7 +490,7 @@ const setChatRommProfile = async (req, res) => {
     return res.json(roomUpdated)
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
 }
@@ -494,7 +502,7 @@ const removeChatRoomProfile = async (req, res) => {
   const { profile_url } = oldRoom
   if (!profile_url)
     return res.status(400).json({
-      message: "Profile was deleted",
+      message: "Profile was deleted"
     })
 
   try {
@@ -502,7 +510,7 @@ const removeChatRoomProfile = async (req, res) => {
     fs.unlinkSync(`storage/group-profile/${roomId}/${profile_url}`)
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
 
@@ -515,7 +523,7 @@ const findAndSendToClient = async (roomId, userId, action = 1) => {
   const room2 = await ChatRoom.findById(roomId).populate([
     {
       path: "latest_message",
-      match: { deleted_by: { $nin: [userId] } },
+      match: { deleted_by: { $nin: [userId] } }
     },
     {
       path: "unread",
@@ -523,10 +531,10 @@ const findAndSendToClient = async (roomId, userId, action = 1) => {
         $and: [
           { read_by: { $nin: [userId] } },
           { deleted_by: { $nin: [userId] } },
-          { sender: { $ne: userId } },
-        ],
-      },
-    },
+          { sender: { $ne: userId } }
+        ]
+      }
+    }
   ])
 
   for (let i = 0; i < room2.members.length; i++) {
@@ -547,5 +555,5 @@ export {
   joinChatRoom,
   leaveChatRoom,
   setChatRommProfile,
-  removeChatRoomProfile,
+  removeChatRoomProfile
 }
