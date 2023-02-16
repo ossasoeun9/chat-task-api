@@ -42,10 +42,7 @@ const chatRoomSchema = new mongoose.Schema(
     people: [
       {
         type: mongoose.Types.ObjectId,
-        ref: User,
-        autopopulate: {
-          select: "_id first_name last_name profile_url is_online",
-        },
+        ref: User
       },
     ],
     muted_by: [
