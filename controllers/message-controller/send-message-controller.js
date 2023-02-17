@@ -288,6 +288,7 @@ const sendUrl = async (req, res) => {
     const message = await Message.create({
       sender: _id,
       url: newUrl,
+      type: 7,
       text,
       room: req.params.roomId,
     })
