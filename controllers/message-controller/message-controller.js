@@ -182,6 +182,7 @@ const deleteMessage = async (req, res) => {
         { $addToSet: { deleted_by: [_id] } }
       )
       sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
+      sendToClient(_id, roomId, 2);
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
