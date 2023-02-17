@@ -19,19 +19,29 @@ const sendText = async (req, res) => {
   const { roomId } = req.params
   const { text, ref_message } = req.body
   if (!text) return res.status(400).json({ message: "Text is required" })
-  try {
-    const message = await Message.create({
-      sender: _id,
-      type: 2,
-      text,
-      room: roomId,
-      ref_message,
+  Message.create({
+    sender: _id,
+    type: 2,
+    text,
+    room: roomId,
+    ref_message
+  })
+    .then(async (value) => {
+      var data = await value.populate({
+        path: "sender",
+        select: "_id first_name last_name profile_url is_online phone_number",
+        populate: {
+          path: "contact",
+          select: "-created_at -updated_at",
+          match: { owner: { $eq: _id } }
+        }
+      })
+      sendMessageToClient(data, roomId)
+      res.json(msgToJson(data, _id))
     })
-    sendMessageToClient(message, roomId)
-    return res.json(msgToJson(message, _id))
-  } catch (error) {
-    return res.status(500).json({ error })
-  }
+    .catch((error) => {
+      res.status(500).json({ error })
+    })
 }
 
 const forwardMessage = async (req, res) => {
@@ -44,14 +54,28 @@ const forwardMessage = async (req, res) => {
   if (message && message.type == 3 && message.ref_message) {
     ref_message = message.ref_message._id
   }
-  const newMessage = await Message.create({
+  Message.create({
     sender: _id,
     room: roomId,
     ref_message,
-    type: 3,
+    type: 3
   })
-  sendMessageToClient(newMessage, roomId)
-  return res.json(msgToJson(newMessage, _id))
+    .then(async (value) => {
+      var data = await value.populate({
+        path: "sender",
+        select: "_id first_name last_name profile_url is_online phone_number",
+        populate: {
+          path: "contact",
+          select: "-created_at -updated_at",
+          match: { owner: { $eq: _id } }
+        }
+      })
+      sendMessageToClient(data, roomId)
+      res.json(msgToJson(data, _id))
+    })
+    .catch((error) => {
+      res.status(500).json({ error })
+    })
 }
 
 const sendVoice = async (req, res) => {
@@ -61,7 +85,7 @@ const sendVoice = async (req, res) => {
 
   if (!voice)
     return res.status(400).json({
-      message: "Voice is required",
+      message: "Voice is required"
     })
 
   const dir = `storage/voice-messages/${roomId}/`
@@ -94,20 +118,34 @@ const sendVoice = async (req, res) => {
       size,
       duration,
       room: roomId,
-      owner: _id,
+      owner: _id
     })
 
-    const newMessage = await Message.create({
+    Message.create({
       sender: _id,
       room: roomId,
       type: 4,
-      voice: newVoice._id,
+      voice: newVoice._id
     })
-    sendMessageToClient(newMessage, roomId)
-    return res.json(msgToJson(newMessage, _id))
+      .then(async (value) => {
+        var data = await value.populate({
+          path: "sender",
+          select: "_id first_name last_name profile_url is_online phone_number",
+          populate: {
+            path: "contact",
+            select: "-created_at -updated_at",
+            match: { owner: { $eq: _id } }
+          }
+        })
+        sendMessageToClient(data, roomId)
+        res.json(msgToJson(data, _id))
+      })
+      .catch((error) => {
+        res.status(500).json({ error })
+      })
   } catch (error) {
     return res.status(500).json({
-      message: error,
+      message: error
     })
   }
 }
@@ -128,27 +166,57 @@ const sendMedia = async (req, res) => {
         resMedia.push(sss)
       }
       const newMedia = await Media.insertMany(resMedia)
-      const newMessage = await Message.create({
+      Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 5,
-        media: newMedia,
+        media: newMedia
       })
-      sendMessageToClient(newMessage, roomId)
-      return res.json(msgToJson(newMessage, _id))
+        .then(async (value) => {
+          var data = await value.populate({
+            path: "sender",
+            select:
+              "_id first_name last_name profile_url is_online phone_number",
+            populate: {
+              path: "contact",
+              select: "-created_at -updated_at",
+              match: { owner: { $eq: _id } }
+            }
+          })
+          sendMessageToClient(data, roomId)
+          res.json(msgToJson(data, _id))
+        })
+        .catch((error) => {
+          res.status(500).json({ error })
+        })
     } else {
       const resMedia = await storeMedia(media.path, roomId, _id)
       const newMedia = await Media.create(resMedia)
-      const newMessage = await Message.create({
+      Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 5,
-        media: [newMedia._id],
+        media: [newMedia._id]
       })
-      sendMessageToClient(newMessage, roomId)
-      return res.json(msgToJson(newMessage, _id))
+        .then(async (value) => {
+          var data = await value.populate({
+            path: "sender",
+            select:
+              "_id first_name last_name profile_url is_online phone_number",
+            populate: {
+              path: "contact",
+              select: "-created_at -updated_at",
+              match: { owner: { $eq: _id } }
+            }
+          })
+          sendMessageToClient(data, roomId)
+          res.json(msgToJson(data, _id))
+        })
+        .catch((error) => {
+          res.status(500).json({ error })
+        })
     }
   } catch (error) {
     return res.status(500).json({ error })
@@ -186,7 +254,7 @@ const storeMedia = async (filePath, roomId, userId) => {
       duration,
       is_video,
       room: roomId,
-      owner: userId,
+      owner: userId
     }
   }
 
@@ -195,7 +263,7 @@ const storeMedia = async (filePath, roomId, userId) => {
     size,
     is_video,
     room: roomId,
-    owner: userId,
+    owner: userId
   }
 }
 
@@ -215,27 +283,57 @@ const sendFiles = async (req, res) => {
         resFiles.push(sss)
       }
       const newFile = await FileDB.insertMany(resFiles)
-      const newMessage = await Message.create({
+      Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 6,
-        files: newFile,
+        files: newFile
       })
-      sendMessageToClient(newMessage, roomId)
-      return res.json(newMessage)
+        .then(async (value) => {
+          var data = await value.populate({
+            path: "sender",
+            select:
+              "_id first_name last_name profile_url is_online phone_number",
+            populate: {
+              path: "contact",
+              select: "-created_at -updated_at",
+              match: { owner: { $eq: _id } }
+            }
+          })
+          sendMessageToClient(data, roomId)
+          res.json(msgToJson(data, _id))
+        })
+        .catch((error) => {
+          res.status(500).json({ error })
+        })
     } else {
       const resFile = storeFile(files.path, roomId, _id)
       const newFile = await FileDB.create(resFile)
-      const newMessage = await Message.create({
+      Message.create({
         sender: _id,
         room: roomId,
         text,
         type: 6,
-        files: [newFile._id],
+        files: [newFile._id]
       })
-      sendMessageToClient(newMessage, roomId)
-      return res.json(msgToJson(newMessage, _id))
+        .then(async (value) => {
+          var data = await value.populate({
+            path: "sender",
+            select:
+              "_id first_name last_name profile_url is_online phone_number",
+            populate: {
+              path: "contact",
+              select: "-created_at -updated_at",
+              match: { owner: { $eq: _id } }
+            }
+          })
+          sendMessageToClient(data, roomId)
+          res.json(msgToJson(data, _id))
+        })
+        .catch((error) => {
+          res.status(500).json({ error })
+        })
     }
   } catch (error) {
     return res.status(500).json({ error })
@@ -268,7 +366,7 @@ const storeFile = (filePath, roomId, userId) => {
     filename,
     size,
     room: roomId,
-    owner: userId,
+    owner: userId
   }
 }
 
@@ -283,17 +381,31 @@ const sendUrl = async (req, res) => {
       link: url,
       is_preview: is_preview == 1,
       room: req.params.roomId,
-      owner: _id,
+      owner: _id
     })
-    const message = await Message.create({
+    Message.create({
       sender: _id,
       url: newUrl,
       type: 7,
       text,
-      room: req.params.roomId,
+      room: req.params.roomId
     })
-    sendMessageToClient(message, req.params.roomId)
-    return res.json(msgToJson(message, _id))
+      .then(async (value) => {
+        var data = await value.populate({
+          path: "sender",
+          select: "_id first_name last_name profile_url is_online phone_number",
+          populate: {
+            path: "contact",
+            select: "-created_at -updated_at",
+            match: { owner: { $eq: _id } }
+          }
+        })
+        sendMessageToClient(data, req.params.roomId)
+        res.json(msgToJson(data, _id))
+      })
+      .catch((error) => {
+        res.status(500).json({ error })
+      })
   } catch (error) {
     return res.status(500).json({ error })
   }
