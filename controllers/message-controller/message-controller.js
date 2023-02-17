@@ -5,13 +5,13 @@ import {
   sendMedia,
   sendText,
   sendUrl,
-  sendVoice,
+  sendVoice
 } from "./send-message-controller.js"
 import { paginateMessageToJson } from "../../utils/msg-to-json.js"
 import {
   sendMesToClient,
   sendMessageToClient,
-  sendMessagesToClient,
+  sendMessagesToClient
 } from "../ws-message-controller.js"
 import { sendToClient } from "../ws-chats-controller.js"
 import ChatRoom from "../../models/chat-room-model.js"
@@ -25,7 +25,7 @@ const getMessage = async (req, res) => {
       ? {
           room: roomId,
           deleted_by: { $nin: [_id] },
-          text: new RegExp(search, "i"),
+          text: new RegExp(search, "i")
         }
       : { room: roomId, deleted_by: { $nin: [_id] } }
 
@@ -33,6 +33,15 @@ const getMessage = async (req, res) => {
     page,
     limit,
     sort: { created_at: -1 },
+    populate: {
+      path: "sender",
+      select: "_id first_name last_name profile_url is_online phone_number",
+      populate: {
+        path: "contact",
+        select: "-created_at -updated_at",
+        match: { owner: { $eq: _id } }
+      }
+    }
   })
   return res.json(paginateMessageToJson(messages, _id))
 }
@@ -47,8 +56,8 @@ const readMessage = async (req, res) => {
         { room: roomId },
         { sender: { $ne: _id } },
         { read_by: { $nin: [_id] } },
-        { deleted_by: { $nin: [_id] } },
-      ],
+        { deleted_by: { $nin: [_id] } }
+      ]
     }).select("_id")
     const messageIds = oldMessage.map((mes) => mes._id)
     const message = await Message.updateMany(
@@ -57,11 +66,11 @@ const readMessage = async (req, res) => {
           { room: roomId },
           { sender: { $ne: _id } },
           { read_by: { $nin: [_id] } },
-          { deleted_by: { $nin: [_id] } },
-        ],
+          { deleted_by: { $nin: [_id] } }
+        ]
       },
       {
-        $addToSet: { read_by: [_id] },
+        $addToSet: { read_by: [_id] }
       }
     )
     ChatRoom.findById(roomId).then((data) => {
@@ -72,9 +81,19 @@ const readMessage = async (req, res) => {
         sendToClient(data.members[i], roomId, 2)
       }
     })
-    Message.find({ _id: messageIds }).then((mes) => {
-      sendMessagesToClient(mes, roomId, 2)
-    })
+    Message.find({ _id: messageIds })
+      .populate({
+        path: "sender",
+        select: "_id first_name last_name profile_url is_online phone_number",
+        populate: {
+          path: "contact",
+          select: "-created_at -updated_at",
+          match: { owner: { $eq: _id } }
+        }
+      })
+      .then((mes) => {
+        sendMessagesToClient(mes, roomId, 2)
+      })
     return res.json(message)
   } catch (error) {
     return res.status(500).json({ error })
@@ -156,13 +175,14 @@ const deleteMessage = async (req, res) => {
   } else {
     try {
       await Message.deleteMany({
-        $and: [{ _id: { $in: messagesJson } }, { sender: _id }],
+        $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
       })
       await Message.updateMany(
         { $and: [{ _id: { $in: messagesJson } }] },
         { $addToSet: { deleted_by: [_id] } }
       )
       sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
+      sendToClient(_id, roomId, 2);
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
@@ -176,5 +196,5 @@ export {
   sendMessage,
   editMessage,
   crearHistory,
-  deleteMessage,
+  deleteMessage
 }
