@@ -32,10 +32,10 @@ const getMessage = async (req, res) => {
   const messages = await Message.paginate(query, {
     page,
     limit,
+    sort: { created_at: -1 },
     populate: {
       path: "sender",
       select: "_id first_name last_name profile_url is_online phone_number",
-      sort: { created_at: -1 },
       populate: {
         path: "contact",
         select: "-created_at -updated_at",
