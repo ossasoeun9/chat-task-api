@@ -47,7 +47,7 @@ const roomToJson = (room, userId) => {
     newRoom.admin = admin
     newRoom.name = name
     newRoom.profile_url = profile_url
-      ? `${apiHost}/group-profile/${_id}/${profile_url}`
+      ? `group-profile/${_id}/${profile_url}`
       : null
     newRoom.description = description
   }

@@ -61,7 +61,7 @@ userSchema.set("toJSON", {
     const { _id, profile_url } = ret
     delete ret.id
     if (profile_url) {
-      ret.profile_url = `${apiHost}/user-profile/${_id}/${profile_url}`
+      ret.profile_url = `user-profile/${_id}/${profile_url}`
     }
     return ret
   },

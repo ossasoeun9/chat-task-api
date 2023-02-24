@@ -46,5 +46,12 @@ mediaSchema.pre("deleteMany", function (next) {
     })
 })
 
+mediaSchema.set('toJSON', {
+  transform: (doc, ret, opt) => {
+    ret.path = `media/${ret.room}/${ret.filename}`
+    return ret
+  }
+})
+
 const Media = mongoose.model("Media", mediaSchema)
 export default Media
