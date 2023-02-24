@@ -1,8 +1,3 @@
-import dotenv from "dotenv"
-
-dotenv.config()
-const apiHost = process.env.API_HOST
-
 const paginateMessageToJson = (datas, userId) => {
   const { meta, data } = datas
   const newData = messagesToJson(data, userId)
@@ -36,7 +31,7 @@ const msgToJson = (message, userId) => {
     created_at,
     updated_at,
   } = message
-  let jsonMessage = { _id }
+  let jsonMessage = { _id, room}
 
   if (type) {
     jsonMessage.type = type
@@ -65,26 +60,14 @@ const msgToJson = (message, userId) => {
 
   if (voice) {
     jsonMessage.voice = voice
-    jsonMessage.voice.url = `${apiHost}/voice-messages/${room}/${voice.filename}`
-    delete jsonMessage.voice.filename
   }
 
   if (media && media.length > 0) {
     jsonMessage.media = media
-    for (let i = 0; i < jsonMessage.media.length; i++) {
-      const element = jsonMessage.media[i]
-      jsonMessage.media[i].url = `${apiHost}/media/${room}/${element.filename}`
-      delete jsonMessage.media[i].filename
-    }
   }
 
   if (files && files.length > 0) {
     jsonMessage.files = files
-    for (let i = 0; i < jsonMessage.files.length; i++) {
-      const element = jsonMessage.files[i]
-      jsonMessage.files[i].url = `${apiHost}/files/${room}/${element.filename}`
-      delete jsonMessage.files[i].filename
-    }
   }
 
   if (url) {

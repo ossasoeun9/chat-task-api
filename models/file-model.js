@@ -43,5 +43,12 @@ fileSchema.pre("deleteMany", function (next) {
     })
 })
 
+fileSchema.set('toJSON', {
+  transform: (doc, ret, opt) => {
+    ret.path = `files/${ret.room}/${ret.filename}`
+    return ret
+  }
+})
+
 const FileDB = mongoose.model("File DB", fileSchema)
 export default FileDB

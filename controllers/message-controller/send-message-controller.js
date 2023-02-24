@@ -10,7 +10,6 @@ import { getVideoDurationInSeconds } from "get-video-duration"
 import Media from "../../models/media-model.js"
 import FileDB from "../../models/file-model.js"
 import Url from "../../models/url-model.js"
-import ChatRoom from "../../models/chat-room-model.js"
 import { msgToJson } from "../../utils/msg-to-json.js"
 import { sendMessageToClient } from "../ws-message-controller.js"
 

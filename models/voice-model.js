@@ -44,5 +44,12 @@ voiceSchema.pre("deleteMany", function (next) {
     })
 })
 
+voiceSchema.set('toJSON', {
+  transform: (doc, ret, opt) => {
+    ret.path = `voice-messages/${ret.room}/${ret.filename}`
+    return ret
+  }
+})
+
 const Voice = mongoose.model("Voice", voiceSchema)
 export default Voice
