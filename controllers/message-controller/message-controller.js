@@ -15,6 +15,7 @@ import {
 } from "../ws-message-controller.js"
 import { sendToClient } from "../ws-chats-controller.js"
 import ChatRoom from "../../models/chat-room-model.js"
+import { findAndSendToClient } from "../chat-room-controller.js"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -167,7 +168,7 @@ const deleteMessage = async (req, res) => {
         { _id: { $in: messagesJson } },
         { $addToSet: { deleted_by: [_id] } }
       )
-      sendMessageToClient({ ids: messagesJson }, roomId, 3)
+      sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
@@ -181,8 +182,9 @@ const deleteMessage = async (req, res) => {
         { $and: [{ _id: { $in: messagesJson } }] },
         { $addToSet: { deleted_by: [_id] } }
       )
-      sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
-      sendToClient(_id, roomId, 2);
+      sendMessageToClient({ ids: messagesJson }, roomId, 3)
+      findAndSendToClient(roomId, _id, 3)
+      
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })

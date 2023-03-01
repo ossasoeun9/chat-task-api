@@ -546,14 +546,22 @@ const findAndSendToClient = async (roomId, userId, action = 1) => {
     }
   ])
 
-  for (let i = 0; i < room2.members.length; i++) {
-    const id = room2.members[i]
-    sendToClient(id, room2._id, action)
+  if (room2.type != 2) {
+    for (let i = 0; i < room2.members.length; i++) {
+      const id = room2.members[i]
+      sendToClient(id, room2._id, action)
+    }
+  } else {
+    for (let i = 0; i < room2.people.length; i++) {
+      const id = room2.people[i]
+      sendToClient(id, room2._id, action)
+    }
   }
   return roomToJson(room2, userId)
 }
 
 export {
+  findAndSendToClient,
   getChatRoom,
   getChatRoomDetail,
   createChatRoom,
