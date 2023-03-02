@@ -175,12 +175,16 @@ const deleteMessage = async (req, res) => {
     }
   } else {
     try {
+      var deletedMessage = await Message.find({
+        $and: [
+          {
+            _id: { $in: messagesJson }
+          },
+          { sender: _id }
+        ]
+      })
       await Message.deleteMany({
         $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
-      })
-      var deletedMessage = await Message.find({
-        _id: { $in: messagesJson },
-        sender: { $ne: _id }
       })
       await Message.updateMany(
         { $and: [{ _id: { $in: messagesJson } }] },
@@ -188,9 +192,10 @@ const deleteMessage = async (req, res) => {
       )
       sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
       var ids = deletedMessage.map((e) => {
-        return e.id;
+        return e.id
       })
       sendMessageToClient(JSON.stringify({ ids }), roomId, 3)
+      // return res.json({ deletedMessage })
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
