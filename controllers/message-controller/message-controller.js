@@ -15,7 +15,6 @@ import {
 } from "../ws-message-controller.js"
 import { sendToClient } from "../ws-chats-controller.js"
 import ChatRoom from "../../models/chat-room-model.js"
-import { findAndSendToClient } from "../chat-room-controller.js"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -127,7 +126,15 @@ const editMessage = async (req, res) => {
   const { messageId } = req.params
   const { text } = req.body
   if (!text) return res.status(400).json({ message: "Text is required" })
-  const message = await Message.findById(messageId)
+  const message = await Message.findById(messageId).populate({
+    path: "sender",
+    select: "_id first_name last_name profile_url is_online phone_number",
+    populate: {
+      path: "contact",
+      select: "-created_at -updated_at",
+      match: { owner: { $eq: _id } }
+    }
+  })
   if (!message)
     return res.status(400).json({ message: "Message id is invalid" })
   message.text = text
