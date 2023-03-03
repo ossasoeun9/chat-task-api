@@ -32,7 +32,9 @@ const roomToJson = (room, userId) => {
     latest_message,
     unread,
     people,
-    muted_by
+    muted_by,
+    created_at,
+    updated_at,
   } = room
 
   const newRoom = { _id, type }
@@ -57,6 +59,8 @@ const roomToJson = (room, userId) => {
   }
   newRoom.unread = unread
   newRoom.is_mute = muted_by.map((v) => v.valueOf()).indexOf(userId) != -1
+  newRoom.created_at = created_at
+  newRoom.updated_at = updated_at
 
   return newRoom
 }

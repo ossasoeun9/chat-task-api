@@ -3,15 +3,19 @@ import axios from "axios"
 import dotenv from "dotenv"
 import jsonwebtoken from "jsonwebtoken"
 import { generateUsername } from "unique-username-generator"
+import ChatRoom from "../models/chat-room-model.js"
+import Contact from "../models/contact-model.js"
 
 import Country from "../models/country-model.js"
 import DeviceLogin from "../models/device-login-model.js"
+import Message from "../models/message-model.js"
 import User from "../models/user-model.js"
 import {
   generateAccessToken,
   generateRefreshToken
 } from "../utils/token-generator.js"
 import { containsOnlyNumbers } from "../utils/validator.js"
+import { sendToClient } from "./ws-chats-controller.js"
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -87,6 +91,22 @@ const verifyOTP = async (req, res) => {
           username
         })
         newUser = await User.findById(newUser._id).populate("country")
+        const contacts = await Contact.find({phone_number: phoneNumber});
+        for(let i = 0; i < contacts.length; i++) {
+          var contact = contacts[i]
+          var room = await ChatRoom.create({
+            type: 2,
+            people: [newUser._id, contact.owner],
+          })
+          await Message.create({
+            type: 1,
+            room: room._id,
+            sender: newUser._id,
+            text: `@${newUser.username} joined ChatTask`,
+          })
+          sendToClient(newUser._id, room._id)
+          sendToClient(contact.owner, room._id)
+        }
       }
 
       const accessToken = generateAccessToken(user || newUser, "7d")

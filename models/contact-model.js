@@ -11,7 +11,6 @@ const contactSchema = mongoose.Schema(
     owner: {
       type: mongoose.Types.ObjectId,
       required: true,
-      select: false,
       ref: User
     },
     first_name: {

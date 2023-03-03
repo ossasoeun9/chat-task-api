@@ -20,7 +20,7 @@ const getChatRoom = async (req, res) => {
     })
       .populate({
         path: "people",
-        select: "_id first_name last_name profile_url is_online phone_number",
+        select: "_id first_name last_name username profile_url is_online phone_number",
         populate: {
           path: "contact",
           select: "-created_at -updated_at",
@@ -32,7 +32,7 @@ const getChatRoom = async (req, res) => {
         match: { deleted_by: { $nin: [_id] } },
         populate: {
           path: "sender",
-          select: "_id first_name last_name profile_url is_online phone_number",
+          select: "_id first_name last_name username profile_url is_online phone_number",
           populate: {
             path: "contact",
             select: "-created_at -updated_at",
@@ -127,24 +127,17 @@ const ceateTwoPeopleRoom = async (req, res) => {
     return res.json(roomToJson(room0, sender))
   }
 
-  const message = messageValidator(req)
-
-  if (message) {
-    return res.status(400).json({ message })
-  }
-
-  const { message_type, text } = req.body
-
   try {
     const room = await ChatRoom.create({
       type: 2,
       people: [sender, receiver]
     })
+    const user = await User.findById(sender).select("username")
     await Message.create({
-      sender,
+      type: 1,
       room: room._id,
-      type: message_type,
-      text: text
+      sender: sender,
+      text: `@${user.username} strated message`,
     })
     const room2 = await ChatRoom.findById(room._id).populate([
       {
@@ -161,6 +154,7 @@ const ceateTwoPeopleRoom = async (req, res) => {
           ]
         }
       }
+    
     ])
     sendToClient(sender, room._id)
     sendToClient(receiver, room._id)
