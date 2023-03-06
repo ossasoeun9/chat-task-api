@@ -74,7 +74,7 @@ const createOrEditContact = async (req, res) => {
 
   if (oldContact) {
     oldContact.first_name = first_name || oldContact.first_name
-    oldContact.last_name = last_name || oldContact.last_name
+    oldContact.last_name = last_name
     await oldContact.save()
     return res.json(oldContact)
   }

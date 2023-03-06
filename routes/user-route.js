@@ -4,6 +4,7 @@ import {
   editBio,
   editName,
   getProfile,
+  getUsers,
   removeProfilePicure,
   requestChangePhoneNumber,
   setProfilePicture,
@@ -12,6 +13,7 @@ import {
 
 const router = express.Router()
 
+router.get("/", getUsers)
 router.get("/profile", getProfile)
 router.post("/edit-name", editName)
 router.post("/edit-bio", editBio)

@@ -5,6 +5,7 @@ import {
   editChatRoom,
   getChatRoom,
   getChatRoomDetail,
+  getMembers,
   joinChatRoom,
   leaveChatRoom,
   muteOrUnmute,
@@ -16,6 +17,7 @@ import {
 const router = express.Router()
 
 router.get("/", getChatRoom)
+router.get("/:roomId/members", getMembers)
 router.get("/:id", getChatRoomDetail)
 router.post("/create", createChatRoom)
 router.post("/:id/edit", editChatRoom)

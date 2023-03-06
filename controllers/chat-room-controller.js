@@ -20,11 +20,12 @@ const getChatRoom = async (req, res) => {
     })
       .populate({
         path: "people",
-        select: "_id first_name last_name username profile_url is_online phone_number",
+        select:
+          "_id first_name last_name username profile_url is_online phone_number",
         populate: {
           path: "contact",
           select: "-created_at -updated_at",
-          match: { owner: {$eq: _id} }
+          match: { owner: { $eq: _id } }
         }
       })
       .populate({
@@ -32,11 +33,12 @@ const getChatRoom = async (req, res) => {
         match: { deleted_by: { $nin: [_id] } },
         populate: {
           path: "sender",
-          select: "_id first_name last_name username profile_url is_online phone_number",
+          select:
+            "_id first_name last_name username profile_url is_online phone_number",
           populate: {
             path: "contact",
             select: "-created_at -updated_at",
-            match: { owner: {$eq: _id} }
+            match: { owner: { $eq: _id } }
           }
         }
       })
@@ -137,7 +139,7 @@ const ceateTwoPeopleRoom = async (req, res) => {
       type: 1,
       room: room._id,
       sender: sender,
-      text: `@${user.username} strated message`,
+      text: `@${user.username} strated message`
     })
     const room2 = await ChatRoom.findById(room._id).populate([
       {
@@ -154,7 +156,6 @@ const ceateTwoPeopleRoom = async (req, res) => {
           ]
         }
       }
-    
     ])
     sendToClient(sender, room._id)
     sendToClient(receiver, room._id)
@@ -554,7 +555,20 @@ const findAndSendToClient = async (roomId, userId, action = 1) => {
   return roomToJson(room2, userId)
 }
 
+const getMembers = async (req, res) => {
+  const roomId = req.params.roomId
+  try {
+    const room = await ChatRoom.findById(roomId)
+      .select("members")
+      .populate("members")
+    return res.json(room.members)
+  } catch (error) {
+    res.status(500).json({ error })
+  }
+}
+
 export {
+  getMembers,
   findAndSendToClient,
   getChatRoom,
   getChatRoomDetail,
