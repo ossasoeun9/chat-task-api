@@ -4,7 +4,7 @@ import { randomBytes } from "crypto"
 import ChatRoom from "../models/chat-room-model.js"
 import Message from "../models/message-model.js"
 import User from "../models/user-model.js"
-import messageValidator from "../utils/message-validator.js"
+import { sendMessageToClient } from "./ws-message-controller.js"
 import { roomToJson } from "../utils/chat-room-to-json.js"
 import { sendToClient } from "./ws-chats-controller.js"
 import mongoose from "mongoose"
@@ -429,18 +429,20 @@ const leaveChatRoom = async (req, res) => {
         message: "Room was delete successfully"
       })
     }
-    await ChatRoom.updateOne(
-      { _id: roomId },
-      { $pull: { members: { $in: [_id] } } }
-    )
     const user = await User.findById(_id)
-    await Message.create({
+    var mes = await Message.create({
       sender: user.id,
       type: 1,
       room: roomId,
       text: `@${user.username} has leaved this group`
     })
-    const roomUpdated = await findAndSendToClient(_id, roomId, 2)
+    await ChatRoom.updateOne(
+      { _id: roomId },
+      { $pull: { members: { $in: [_id] } } }
+    )
+    sendMessageToClient(mes, roomId)
+    sendToClient(_id, roomId, 3)
+    const roomUpdated = await findAndSendToClient(roomId, _id, 2)
 
     return res.json(roomUpdated)
   } catch (error) {
@@ -524,35 +526,42 @@ const removeChatRoomProfile = async (req, res) => {
 }
 
 const findAndSendToClient = async (roomId, userId, action = 1) => {
-  const room2 = await ChatRoom.findById(roomId).populate([
-    {
-      path: "latest_message",
-      match: { deleted_by: { $nin: [userId] } }
-    },
-    {
-      path: "unread",
-      match: {
-        $and: [
-          { read_by: { $nin: [userId] } },
-          { deleted_by: { $nin: [userId] } },
-          { sender: { $ne: userId } }
-        ]
+  try {
+    const room2 = await ChatRoom.findById(roomId).populate([
+      {
+        path: "latest_message",
+        match: { deleted_by: { $nin: [userId] } }
+      },
+      {
+        path: "unread",
+        match: {
+          $and: [
+            { read_by: { $nin: [userId] } },
+            { deleted_by: { $nin: [userId] } },
+            { sender: { $ne: userId } }
+          ]
+        }
+      }
+    ])
+
+    console.log(room2)
+
+    if (room2.type != 2) {
+      for (let i = 0; i < room2.members.length; i++) {
+        const id = room2.members[i]
+        sendToClient(id, room2._id, action)
+      }
+    } else {
+      for (let i = 0; i < room2.people.length; i++) {
+        const id = room2.people[i]
+        sendToClient(id, room2._id, action)
       }
     }
-  ])
-
-  if (room2.type != 2) {
-    for (let i = 0; i < room2.members.length; i++) {
-      const id = room2.members[i]
-      sendToClient(id, room2._id, action)
-    }
-  } else {
-    for (let i = 0; i < room2.people.length; i++) {
-      const id = room2.people[i]
-      sendToClient(id, room2._id, action)
-    }
+    return roomToJson(room2, userId)
+  } catch (error) {
+    console.log(error)
+    throw error
   }
-  return roomToJson(room2, userId)
 }
 
 const getMembers = async (req, res) => {
