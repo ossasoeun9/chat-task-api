@@ -27,7 +27,7 @@ const sendToClient = (client, roomId, action = 1) => {
       })
         .populate({
           path: "people",
-          select: "_id first_name last_name profile_url is_online phone_number",
+          select: "_id first_name username last_name profile_url is_online phone_number",
           populate: {
             path: "contact",
             select: "-created_at -updated_at",

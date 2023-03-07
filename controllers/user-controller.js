@@ -6,14 +6,49 @@ import { containsOnlyNumbers } from "../utils/validator.js"
 import { randomBytes } from "crypto"
 import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
+import Contact from "../models/contact-model.js"
+import ChatRoom from "../models/chat-room-model.js"
 
 dotenv.config()
 const apiKey = process.env.API_KEY
 
 const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
+const getUsers = async (req, res) => {
+  const { _id } = req.user
+  try {
+    const contacts = await Contact.find({ owner: _id }).select("phone_number")
+    const contactPhones = contacts.map((e) => {
+      return e.phone_number
+    })
+    var list = await ChatRoom.find({
+      $or: [{ members: _id }, { people: _id }]
+    }).select("members people")
+    var list2 = []
+    for (let i = 0; i < list.length; i++) {
+      for (let k = 0; k < list[i].members.length; k++) {
+        list2.push(list[i].members[k])
+      }
+      for (let k = 0; k < list[i].people.length; k++) {
+        list2.push(list[i].people[k])
+      }
+    }
+    const users = await User.find({
+      $or: [{ phone_number: { $in: contactPhones } }, { _id: { $in: list2 } }],
+      _id: { $ne: _id }
+    }).populate({
+      path: "contact",
+      select: "-created_at -updated_at",
+      match: { owner: { $eq: _id } }
+    })
+    res.json(users)
+  } catch (error) {
+    res.status(500).json({ error })
+  }
+}
+
 const getProfile = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
 
   try {
     const user = await User.findById(_id).populate("country")
@@ -133,7 +168,7 @@ const removeProfilePicure = async (req, res) => {
 }
 
 const changeUsername = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
   const { username } = req.body
 
   if (!username)
@@ -203,7 +238,7 @@ const requestChangePhoneNumber = async (req, res) => {
 }
 
 const verifyChangePhoneNumber = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
   const { session_info, otp_code, country_id } = req.body
   if (!(session_info && otp_code && country_id)) {
     return res.status(400).json({
@@ -237,6 +272,7 @@ const verifyChangePhoneNumber = async (req, res) => {
 }
 
 export {
+  getUsers,
   getProfile,
   editName,
   editBio,

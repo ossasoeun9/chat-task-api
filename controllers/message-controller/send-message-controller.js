@@ -81,6 +81,7 @@ const sendVoice = async (req, res) => {
   const { _id } = req.user
   const roomId = req.params.roomId
   const { voice } = req.files
+  var ref_message = req.body.ref_message
 
   if (!voice)
     return res.status(400).json({
@@ -124,7 +125,8 @@ const sendVoice = async (req, res) => {
       sender: _id,
       room: roomId,
       type: 4,
-      voice: newVoice._id
+      voice: newVoice._id,
+      ref_message,
     })
       .then(async (value) => {
         var data = await value.populate({
@@ -154,6 +156,7 @@ const sendMedia = async (req, res) => {
   const { text } = req.body
   const { roomId } = req.params
   const { media } = req.files
+  var ref_message = req.body.ref_message
   if (!media) return res.status(400).json({ message: "Media is required" })
 
   try {
@@ -170,7 +173,8 @@ const sendMedia = async (req, res) => {
         room: roomId,
         text,
         type: 5,
-        media: newMedia
+        media: newMedia,
+        ref_message,
       })
         .then(async (value) => {
           var data = await value.populate({
@@ -197,7 +201,8 @@ const sendMedia = async (req, res) => {
         room: roomId,
         text,
         type: 5,
-        media: [newMedia._id]
+        media: [newMedia._id],
+        ref_message
       })
         .then(async (value) => {
           var data = await value.populate({
@@ -271,6 +276,7 @@ const sendFiles = async (req, res) => {
   const { text } = req.body
   const { roomId } = req.params
   const { files } = req.files
+  var ref_message = req.body.ref_message
   if (!files) return res.status(400).json({ message: "Files is required" })
 
   try {
@@ -287,7 +293,8 @@ const sendFiles = async (req, res) => {
         room: roomId,
         text,
         type: 6,
-        files: newFile
+        files: newFile,
+        ref_message
       })
         .then(async (value) => {
           var data = await value.populate({
@@ -314,7 +321,8 @@ const sendFiles = async (req, res) => {
         room: roomId,
         text,
         type: 6,
-        files: [newFile._id]
+        files: [newFile._id],
+        ref_message
       })
         .then(async (value) => {
           var data = await value.populate({
@@ -372,6 +380,7 @@ const storeFile = (filePath, roomId, userId) => {
 const sendUrl = async (req, res) => {
   const { _id } = req.user
   const { url, is_preview, text } = req.body
+  var ref_message = req.body.ref_message
   if (!(url && is_preview))
     return res.status(400).json({ message: "Url & is_preview required" })
 
@@ -380,7 +389,8 @@ const sendUrl = async (req, res) => {
       link: url,
       is_preview: is_preview == 1,
       room: req.params.roomId,
-      owner: _id
+      owner: _id,
+      ref_message
     })
     Message.create({
       sender: _id,
