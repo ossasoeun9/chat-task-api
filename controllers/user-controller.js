@@ -7,6 +7,7 @@ import { randomBytes } from "crypto"
 import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import Contact from "../models/contact-model.js"
+import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
 
 dotenv.config()
@@ -16,32 +17,32 @@ const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
 const getUsers = async (req, res) => {
   const { _id } = req.user
+  const { latest_timestamp } = req.query
+
   try {
-    const contacts = await Contact.find({ owner: _id }).select("phone_number")
-    const contactPhones = contacts.map((e) => {
-      return e.phone_number
-    })
-    var list = await ChatRoom.find({
+    var room = await ChatRoom.find({
       $or: [{ members: _id }, { people: _id }]
-    }).select("members people")
-    var list2 = []
-    for (let i = 0; i < list.length; i++) {
-      for (let k = 0; k < list[i].members.length; k++) {
-        list2.push(list[i].members[k])
-      }
-      for (let k = 0; k < list[i].people.length; k++) {
-        list2.push(list[i].people[k])
-      }
+    }).select("_id")
+
+    let userQuery = {
+      _id: { $in: room.map((e) => e._id) },
+      _id: { $ne: _id },
+      updated_at: { $gte: latest_timestamp }
     }
-    const users = await User.find({
-      $or: [{ phone_number: { $in: contactPhones } }, { _id: { $in: list2 } }],
-      _id: { $ne: _id }
-    }).populate({
-      path: "contact",
-      select: "-created_at -updated_at",
-      match: { owner: { $eq: _id } }
-    })
-    res.json(users)
+
+    if (!latest_timestamp) {
+      delete userQuery.updated_at
+    }
+
+    User.find(userQuery)
+      .populate({
+        path: "contact",
+        select: "-created_at -updated_at",
+        match: { owner: { $eq: _id } }
+      })
+      .cursor()
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
   } catch (error) {
     res.status(500).json({ error })
   }

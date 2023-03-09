@@ -5,7 +5,6 @@ import Country from "./country-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 
 dotenv.config()
-const apiHost = process.env.API_HOST
 
 const userSchema = mongoose.Schema(
   {
@@ -23,7 +22,7 @@ const userSchema = mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: Country,
       required: true,
-      auto_populate: true,
+      auto_populate: true
     },
     first_name: {
       type: String,
@@ -44,7 +43,8 @@ const userSchema = mongoose.Schema(
     is_online: {
       type: Boolean,
       default: false
-    }
+    },
+    rooms: [{ type: mongoose.Types.ObjectId, ref: "Chat Room" }]
   },
   {
     timestamps: {
@@ -73,7 +73,7 @@ userSchema.virtual("contact", {
   ref: "Contact",
   localField: "phone_number",
   foreignField: "phone_number",
-  justOne: true,
+  justOne: true
 })
 
 userSchema.plugin(mongooseAutoPopulate)

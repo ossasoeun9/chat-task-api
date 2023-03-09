@@ -77,7 +77,7 @@ chatRoomSchema.virtual("latest_message", {
   options: { sort: { created_at: -1 } },
 })
 chatRoomSchema.virtual("total_member").get(function() {
-  return this.members.length
+  return this.members? this.members.length: 0
 })
 
 chatRoomSchema.virtual("unread", {
