@@ -27,7 +27,7 @@ const getUsers = async (req, res) => {
     let userQuery = {
       _id: { $in: room.map((e) => e._id) },
       _id: { $ne: _id },
-      updated_at: { $gte: latest_timestamp }
+      updated_at: { $gte: latest_timestamp, $ne: latest_timestamp }
     }
 
     if (!latest_timestamp) {
