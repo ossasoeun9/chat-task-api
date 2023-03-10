@@ -134,6 +134,10 @@ const ceateTwoPeopleRoom = async (req, res) => {
       type: 2,
       people: [sender, receiver]
     })
+    await User.updateMany(
+      { _id: { $in: [sender, receiver] } },
+      { $addToSet: { rooms: [room._id] } }
+    )
     const user = await User.findById(sender).select("username")
     await Message.create({
       type: 1,
@@ -200,6 +204,10 @@ const createGroupChat = async (req, res) => {
       admin: userId,
       name
     })
+    await User.updateMany(
+      { _id: { $in: membersJson } },
+      { $addToSet: { rooms: [_id] } }
+    )
     const user = await User.findById(userId).select("username")
     await Message.create({
       sender: userId,
@@ -299,6 +307,10 @@ const addMembers = async (req, res) => {
       { _id: roomId },
       { $addToSet: { members: membersJson } }
     )
+    await User.updateMany(
+      { _id: { $in: membersJson } },
+      { $addToSet: { rooms: [roomId] } }
+    )
     const user = await User.findById(_id).select("username")
     const membersObject = await User.find({ _id: { $in: membersJson } }).select(
       "username"
@@ -352,6 +364,10 @@ const removeMembers = async (req, res) => {
       { _id: roomId },
       { $pullAll: { members: membersJson } }
     )
+    await User.updateMany(
+      { _id: { $in: membersJson } },
+      { $pullAll: { rooms: [roomId] } }
+    )
     const user = await User.findById(_id).select("username")
     const membersObject = await User.find({ _id: { $in: membersJson } }).select(
       "username"
@@ -392,7 +408,12 @@ const joinChatRoom = async (req, res) => {
     )
     if (myRoom) return res.json(myRoom)
     await ChatRoom.updateOne({ _id: roomId }, { $addToSet: { members: [_id] } })
+    await User.updateOne(
+      { _id: _id },
+      { $addToSet: { rooms: [roomId] } }
+    )
     const user = await User.findById(_id)
+    
     await Message.create({
       sender: user.id,
       type: 1,
@@ -425,6 +446,10 @@ const leaveChatRoom = async (req, res) => {
         console.log(id)
         sendToClient(id, roomId, 3)
       }
+      await User.updateMany(
+        { rooms: {$in: [roomId]} },
+        { $pullAll: { rooms: [roomId] } }
+      )
       return res.json({
         message: "Room was delete successfully"
       })
@@ -439,6 +464,10 @@ const leaveChatRoom = async (req, res) => {
     await ChatRoom.updateOne(
       { _id: roomId },
       { $pull: { members: { $in: [_id] } } }
+    )
+    await User.updateOne(
+      { _id: _id },
+      { $pullAll: { rooms: [roomId] } }
     )
     sendMessageToClient(mes, roomId)
     sendToClient(_id, roomId, 3)
