@@ -6,9 +6,9 @@ import { containsOnlyNumbers } from "../utils/validator.js"
 import { randomBytes } from "crypto"
 import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
-import Contact from "../models/contact-model.js"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
+import Contact from "../models/contact-model.js"
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -37,7 +37,6 @@ const getUsers = async (req, res) => {
     User.find(userQuery)
       .populate({
         path: "contact",
-        select: "-created_at -updated_at",
         match: { owner: { $eq: _id } }
       })
       .cursor()

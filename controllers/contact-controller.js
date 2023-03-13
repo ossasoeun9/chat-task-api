@@ -5,33 +5,21 @@ const hideContactFiled = "-owner -is_blocked -created_at -updated_at"
 const hideUserFiled = "-created_at -country"
 
 const getContacts = async (req, res) => {
-  const { contact_ids } = req.body
-  const { blocked = false } = req.query
+  const { _id } = req.user
+  const { latest_timestamp } = req.query
 
-  if (contact_ids) {
-    const ids = JSON.parse(contact_ids)
-    try {
-      Contact.find({
-        owner: req.user._id,
-        is_blocked: blocked,
-        _id: { $in: ids }
-      })
-        .populate("user")
-        .cursor()
-        .pipe(JSONStream.stringify())
-        .pipe(res.type("json"))
-    } catch (error) {
-      return res.status(500).json({
-        message: error
-      })
-    }
+  let query = {
+    owner: _id,
+    updated_at: { $gte: latest_timestamp, $ne: latest_timestamp }
+  }
+
+  if (!latest_timestamp) {
+    delete query.updated_at
   }
 
   try {
-    Contact.find({
-      owner: req.user._id,
-      is_blocked: blocked
-    }).populate("user")
+    Contact.find(query)
+      .populate("user")
       .cursor()
       .pipe(JSONStream.stringify())
       .pipe(res.type("json"))
@@ -69,8 +57,7 @@ const createOrEditContact = async (req, res) => {
     owner: _id,
     phone_number
   })
-    .select(hideContactFiled)
-    .populate("user", hideUserFiled)
+    .populate("user")
 
   if (oldContact) {
     oldContact.first_name = first_name || oldContact.first_name
@@ -87,8 +74,7 @@ const createOrEditContact = async (req, res) => {
       owner: _id
     })
     contact = await Contact.findById({ _id: contact._id })
-      .select(hideContactFiled)
-      .populate("user", hideUserFiled)
+      .populate("user")
     return res.json(contact)
   } catch (error) {
     return res.status(500).json({
