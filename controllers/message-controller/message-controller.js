@@ -35,7 +35,7 @@ const getMessage = async (req, res) => {
     sort: { created_at: -1 },
     populate: {
       path: "sender",
-      select: "_id first_name last_name profile_url is_online phone_number",
+      select: "_id first_name last_name profile_url is_online phone_number username",
       populate: {
         path: "contact",
         select: "-created_at -updated_at",
