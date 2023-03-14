@@ -19,6 +19,7 @@ const getContacts = async (req, res) => {
 
   try {
     Contact.find(query)
+      .sort({ updated_at: "asc" })
       .populate("user")
       .cursor()
       .pipe(JSONStream.stringify())
@@ -56,8 +57,7 @@ const createOrEditContact = async (req, res) => {
   const oldContact = await Contact.findOne({
     owner: _id,
     phone_number
-  })
-    .populate("user")
+  }).populate("user")
 
   if (oldContact) {
     oldContact.first_name = first_name || oldContact.first_name
@@ -73,8 +73,7 @@ const createOrEditContact = async (req, res) => {
       last_name,
       owner: _id
     })
-    contact = await Contact.findById({ _id: contact._id })
-      .populate("user")
+    contact = await Contact.findById({ _id: contact._id }).populate("user")
     return res.json(contact)
   } catch (error) {
     return res.status(500).json({
