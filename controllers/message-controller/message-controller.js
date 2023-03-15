@@ -15,8 +15,6 @@ import {
 } from "../ws-message-controller.js"
 import { sendToClient } from "../ws-chats-controller.js"
 import ChatRoom from "../../models/chat-room-model.js"
-import JSONStream from "JSONStream"
-import es from "event-stream"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -63,13 +61,9 @@ const getAllMessages = async (req, res) => {
 
   Message.find(query)
     .sort({ created_at: -1 })
-    .cursor()
-    .pipe(
-      es.map(function (data, cb) {
-        cb(null, msgToJson(data, _id))
-      })
-    )
-    .pipe(JSONStream.stringify())
+    .cursor({transform: (data) => {
+      return JSON.stringify(msgToJson(data, _id));
+    }})
     .pipe(res.type("json"))
 }
 
