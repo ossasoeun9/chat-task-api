@@ -7,7 +7,7 @@ import {
   sendUrl,
   sendVoice
 } from "./send-message-controller.js"
-import { paginateMessageToJson } from "../../utils/msg-to-json.js"
+import { msgToJson, paginateMessageToJson } from "../../utils/msg-to-json.js"
 import {
   sendMesToClient,
   sendMessageToClient,
@@ -15,6 +15,8 @@ import {
 } from "../ws-message-controller.js"
 import { sendToClient } from "../ws-chats-controller.js"
 import ChatRoom from "../../models/chat-room-model.js"
+import JSONStream from "JSONStream"
+import es from "event-stream"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -35,7 +37,8 @@ const getMessage = async (req, res) => {
     sort: { created_at: -1 },
     populate: {
       path: "sender",
-      select: "_id first_name last_name profile_url is_online phone_number username",
+      select:
+        "_id first_name last_name profile_url is_online phone_number username",
       populate: {
         path: "contact",
         select: "-created_at -updated_at",
@@ -44,6 +47,30 @@ const getMessage = async (req, res) => {
     }
   })
   return res.json(paginateMessageToJson(messages, _id))
+}
+
+const getAllMessages = async (req, res) => {
+  const { _id } = req.user
+  const { roomId } = req.params
+  const { latest_timestamp } = req.query
+  let query = {
+    room: roomId
+  }
+
+  if (latest_timestamp) {
+    query.updated_at = { $gte: latest_timestamp, $ne: latest_timestamp }
+  }
+
+  Message.find(query)
+    .sort({ created_at: -1 })
+    .cursor()
+    .pipe(
+      es.map(function (data, cb) {
+        cb(null, msgToJson(data, _id))
+      })
+    )
+    .pipe(JSONStream.stringify())
+    .pipe(res.type("json"))
 }
 
 const readMessage = async (req, res) => {
@@ -212,6 +239,7 @@ const deleteMessage = async (req, res) => {
 
 export {
   getMessage,
+  getAllMessages,
   readMessage,
   sendMessage,
   editMessage,
