@@ -75,10 +75,10 @@ const msgToJson = (message, userId) => {
   }
 
   if (created_at) {
-    jsonMessage.create_at = created_at
+    jsonMessage.created_at = created_at
   }
   if (updated_at) {
-    jsonMessage.update_at = updated_at
+    jsonMessage.updated_at = updated_at
   }
 
   return jsonMessage
