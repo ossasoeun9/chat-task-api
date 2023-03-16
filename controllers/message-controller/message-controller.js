@@ -53,7 +53,8 @@ const getAllMessages = async (req, res) => {
   const { roomId } = req.params
   const { latest_timestamp } = req.query
   let query = {
-    room: roomId
+    room: roomId,
+    deleted_by: { $nin: [_id] }
   }
 
   if (latest_timestamp) {
