@@ -6,14 +6,18 @@ dotenv.config()
 let user
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"]
+  var token = req.headers["authorization"]
 
   if (!token)
     return res.status(401).json({
       message: "Unauthenticated"
     })
 
-  jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY, (err, data) => {
+  if (token.includes('Bearer')) {
+    token = token.replace('Bearer ', '')
+  }
+
+  return jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY, (err, data) => {
     if (err)
       return res.status(401).json({
         message: "Unauthenticated"
@@ -21,9 +25,8 @@ const verifyToken = (req, res, next) => {
 
     user = data.user
     req.user = data.user
+    return next()
   })
-
-  return next()
 }
 
 export { verifyToken, user }
