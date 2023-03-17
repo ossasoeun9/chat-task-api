@@ -14,6 +14,7 @@ import deviceRoute from "./routes/device-route.js"
 import contactRoute from "./routes/contact-route.js"
 import chatRoomRoute from "./routes/chat-room-route.js"
 import messageRoute from "./routes/message-route.js"
+import areaRoute from "./routes/area-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
@@ -50,6 +51,7 @@ app.use("/device-login", deviceRoute)
 app.use("/contacts", contactRoute)
 app.use("/chat-rooms", chatRoomRoute)
 app.use("/messages", messageRoute)
+app.use("/areas", areaRoute)
 
 // protected websoket
 app.ws("/chats", wsController)
