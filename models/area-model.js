@@ -1,10 +1,15 @@
 import mongoose from "mongoose"
-import User from "./user-model"
+import User from "./user-model.js"
 
 const areaSchema = mongoose.Schema(
   {
     label: { type: String, required: true },
-    owner: {type: mongoose.Types.ObjectId, required: true, ref: User}
+    owner: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: User,
+      select: false
+    }
   },
   {
     timestamps: {
@@ -17,4 +22,3 @@ const areaSchema = mongoose.Schema(
 
 const Area = mongoose.model("Area", areaSchema)
 export default Area
-

@@ -14,6 +14,6 @@ router.post("/create", createArea)
 router.post("/edit/:id", editArea)
 router.delete("/delete/:id", deleteArea)
 router.post("/add-projects/:id", addProjects)
-router.delete("/remove-projects", removeProjects)
+router.delete("/remove-projects/:id", removeProjects)
 
 export default router
