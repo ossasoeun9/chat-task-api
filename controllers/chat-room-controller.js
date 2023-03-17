@@ -84,15 +84,15 @@ const createChatRoom = async (req, res) => {
     return res.status(400).json({ message: "Room type is required" })
   }
 
-  if (room_type < 2 || room_type > 4) {
-    return res.status(400).json({ message: "Invalid room type (2-4)" })
+  if (room_type < 2 || room_type > 5) {
+    return res.status(400).json({ message: "Invalid room type (2-5)" })
   }
 
   if (room_type == 2) {
     return ceateTwoPeopleRoom(req, res)
   }
 
-  if (room_type == 3 || room_type == 4) {
+  if (room_type == 3 || room_type == 4 || room_type == 5) {
     return createGroupChat(req, res)
   }
 }
@@ -180,13 +180,13 @@ const createGroupChat = async (req, res) => {
     })
   }
 
-  if (!members) {
+  if (!members && room_type != 5) {
     return res.status(400).json({
       message: "Members is required"
     })
   }
 
-  const membersJson = JSON.parse(members)
+  const membersJson = members? JSON.parse(members): []
 
   if (!Array.isArray(membersJson)) {
     return res.status(400).json({
@@ -213,7 +213,7 @@ const createGroupChat = async (req, res) => {
       sender: userId,
       room: _id,
       type: 1,
-      text: `@${user.username} created this group`
+      text: `@${user.username} created ${room_type != 5? 'this group': `${name} project`}`
     })
     const room2 = await findAndSendToClient(_id, userId)
     return res.json(room2)
@@ -443,7 +443,6 @@ const leaveChatRoom = async (req, res) => {
       await ChatRoom.deleteOne({ _id: roomId })
       for (let i = 0; i < room.members.length; i++) {
         const id = room.members[i]
-        console.log(id)
         sendToClient(id, roomId, 3)
       }
       await User.updateMany(
@@ -572,8 +571,6 @@ const findAndSendToClient = async (roomId, userId, action = 1) => {
         }
       }
     ])
-
-    console.log(room2)
 
     if (room2.type != 2) {
       for (let i = 0; i < room2.members.length; i++) {

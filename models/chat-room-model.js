@@ -14,6 +14,7 @@ Note
 2 is two people room
 3 is private group
 4 is public group
+5 is project room
 */
 
 const chatRoomSchema = new mongoose.Schema(
@@ -31,9 +32,14 @@ const chatRoomSchema = new mongoose.Schema(
       ref: User,
       default: null,
     },
+    area: {
+      type: mongoose.Types.ObjectId,
+      ref: "Area",
+      default: null,
+    },
     type: {
       type: Number,
-      enum: [1, 2, 3, 4],
+      enum: [1, 2, 3, 4, 5],
     },
     description: {
       type: String,
