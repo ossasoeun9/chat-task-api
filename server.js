@@ -13,6 +13,8 @@ import authRoute from "./routes/auth-route.js"
 import deviceRoute from "./routes/device-route.js"
 import contactRoute from "./routes/contact-route.js"
 import chatRoomRoute from "./routes/chat-room-route.js"
+import taskRoute from "./routes/task-route.js"
+import subtaskRoute from "./routes/subtask-route.js"
 import messageRoute from "./routes/message-route.js"
 import areaRoute from "./routes/area-route.js"
 import expressWs from "express-ws"
@@ -52,6 +54,8 @@ app.use("/contacts", contactRoute)
 app.use("/chat-rooms", chatRoomRoute)
 app.use("/messages", messageRoute)
 app.use("/areas", areaRoute)
+app.use("/task", taskRoute)
+app.use("/subtask", subtaskRoute)
 
 // protected websoket
 app.ws("/chats", wsController)

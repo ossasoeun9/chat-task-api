@@ -28,7 +28,7 @@ const taskSchema = mongoose.Schema(
     note: String,
     owner: { type: mongoose.Types.ObjectId, required: true, ref: User },
     room: { type: mongoose.Types.ObjectId, default: null, ref: "Chat Room" },
-    assiged_to: [{ type: mongoose.Types.ObjectId, ref: User }],
+    assigned_to: [{ type: mongoose.Types.ObjectId, ref: User }],
     start_at: Date,
     end_at: Date,
     location: { address: String, lat: Number, lng: Number },
