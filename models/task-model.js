@@ -3,6 +3,7 @@ import Attachment from "./attachment-model.js"
 import User from "./user-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongooseDelete from "mongoose-delete"
+import SubTask from "./sub-task-model.js"
 
 /*
 Note:
@@ -34,9 +35,6 @@ const taskSchema = mongoose.Schema(
     end_at: Date,
     location: { address: String, lat: Number, lng: Number },
     depend_on: [{ type: mongoose.Types.ObjectId, ref: "Task" }],
-    attachments: [
-      { type: mongoose.Types.ObjectId, ref: Attachment, autopopulate: true }
-    ],
     progress: { type: Number, default: 0 },
     priority: { type: Number, enum: [1, 2, 3, 4, 5], default: 1 },
     status: { type: Number, enum: [1, 2, 3, 4, 5, 6], default: 1 }
@@ -57,7 +55,14 @@ taskSchema.plugin(mongooseDelete, {
   deletedByType: String
 })
 
-taskSchema.virtual("sub_tasks", {
+
+taskSchema.virtual("attachments", {
+  ref: "Attachment",
+  localField: "_id",
+  foreignField: "task"
+})
+
+taskSchema.virtual("subtasks", {
   ref: "Sub Task",
   localField: "_id",
   foreignField: "parent"

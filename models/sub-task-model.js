@@ -6,8 +6,7 @@ const subTaskSchema = mongoose.Schema(
     parent: {
       type: mongoose.Types.ObjectId,
       required: true,
-      ref: "Task",
-      select: false
+      ref: "Task"
     },
     is_completed: { type: Boolean, default: false }
   },

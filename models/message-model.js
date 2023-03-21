@@ -31,6 +31,11 @@ const messageSchema = mongoose.Schema(
       default: null,
       autopopulate: true,
     },
+    task: {
+      type: mongoose.Types.ObjectId,
+      ref: "Task",
+      default: null,
+    },
     room: {
       type: mongoose.Types.ObjectId,
       ref: "Chat Room",
