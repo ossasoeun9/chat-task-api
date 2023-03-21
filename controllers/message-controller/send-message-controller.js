@@ -26,17 +26,8 @@ const sendText = async (req, res) => {
     ref_message
   })
     .then(async (value) => {
-      var data = await value.populate({
-        path: "sender",
-        select: "_id first_name last_name profile_url is_online phone_number",
-        populate: {
-          path: "contact",
-          select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
-        }
-      })
-      sendMessageToClient(data, roomId)
-      res.json(msgToJson(data, _id))
+      sendMessageToClient(value, roomId)
+      res.json(msgToJson(value, _id))
     })
     .catch((error) => {
       res.status(500).json({ error })
@@ -60,17 +51,8 @@ const forwardMessage = async (req, res) => {
     type: 3
   })
     .then(async (value) => {
-      var data = await value.populate({
-        path: "sender",
-        select: "_id first_name last_name profile_url is_online phone_number",
-        populate: {
-          path: "contact",
-          select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
-        }
-      })
-      sendMessageToClient(data, roomId)
-      res.json(msgToJson(data, _id))
+      sendMessageToClient(value, roomId)
+      res.json(msgToJson(value, _id))
     })
     .catch((error) => {
       res.status(500).json({ error })
@@ -129,17 +111,8 @@ const sendVoice = async (req, res) => {
       ref_message,
     })
       .then(async (value) => {
-        var data = await value.populate({
-          path: "sender",
-          select: "_id first_name last_name profile_url is_online phone_number",
-          populate: {
-            path: "contact",
-            select: "-created_at -updated_at",
-            match: { owner: { $eq: _id } }
-          }
-        })
-        sendMessageToClient(data, roomId)
-        res.json(msgToJson(data, _id))
+        sendMessageToClient(value, roomId)
+        res.json(msgToJson(value, _id))
       })
       .catch((error) => {
         res.status(500).json({ error })
@@ -177,18 +150,8 @@ const sendMedia = async (req, res) => {
         ref_message,
       })
         .then(async (value) => {
-          var data = await value.populate({
-            path: "sender",
-            select:
-              "_id first_name last_name profile_url is_online phone_number",
-            populate: {
-              path: "contact",
-              select: "-created_at -updated_at",
-              match: { owner: { $eq: _id } }
-            }
-          })
-          sendMessageToClient(data, roomId)
-          res.json(msgToJson(data, _id))
+          sendMessageToClient(value, roomId)
+          res.json(msgToJson(value, _id))
         })
         .catch((error) => {
           res.status(500).json({ error })
@@ -205,18 +168,8 @@ const sendMedia = async (req, res) => {
         ref_message
       })
         .then(async (value) => {
-          var data = await value.populate({
-            path: "sender",
-            select:
-              "_id first_name last_name profile_url is_online phone_number",
-            populate: {
-              path: "contact",
-              select: "-created_at -updated_at",
-              match: { owner: { $eq: _id } }
-            }
-          })
-          sendMessageToClient(data, roomId)
-          res.json(msgToJson(data, _id))
+          sendMessageToClient(value, roomId)
+          res.json(msgToJson(value, _id))
         })
         .catch((error) => {
           res.status(500).json({ error })
@@ -297,18 +250,8 @@ const sendFiles = async (req, res) => {
         ref_message
       })
         .then(async (value) => {
-          var data = await value.populate({
-            path: "sender",
-            select:
-              "_id first_name last_name profile_url is_online phone_number",
-            populate: {
-              path: "contact",
-              select: "-created_at -updated_at",
-              match: { owner: { $eq: _id } }
-            }
-          })
-          sendMessageToClient(data, roomId)
-          res.json(msgToJson(data, _id))
+          sendMessageToClient(value, roomId)
+          res.json(msgToJson(value, _id))
         })
         .catch((error) => {
           res.status(500).json({ error })
@@ -325,18 +268,8 @@ const sendFiles = async (req, res) => {
         ref_message
       })
         .then(async (value) => {
-          var data = await value.populate({
-            path: "sender",
-            select:
-              "_id first_name last_name profile_url is_online phone_number",
-            populate: {
-              path: "contact",
-              select: "-created_at -updated_at",
-              match: { owner: { $eq: _id } }
-            }
-          })
-          sendMessageToClient(data, roomId)
-          res.json(msgToJson(data, _id))
+          sendMessageToClient(value, roomId)
+          res.json(msgToJson(value, _id))
         })
         .catch((error) => {
           res.status(500).json({ error })
@@ -400,17 +333,8 @@ const sendUrl = async (req, res) => {
       room: req.params.roomId
     })
       .then(async (value) => {
-        var data = await value.populate({
-          path: "sender",
-          select: "_id first_name last_name profile_url is_online phone_number",
-          populate: {
-            path: "contact",
-            select: "-created_at -updated_at",
-            match: { owner: { $eq: _id } }
-          }
-        })
-        sendMessageToClient(data, req.params.roomId)
-        res.json(msgToJson(data, _id))
+        sendMessageToClient(value, req.params.roomId)
+        res.json(msgToJson(value, _id))
       })
       .catch((error) => {
         res.status(500).json({ error })

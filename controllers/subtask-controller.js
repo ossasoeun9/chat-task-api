@@ -1,5 +1,7 @@
+import Message from "../models/message-model.js"
 import SubTask from "../models/sub-task-model.js"
 import Task from "../models/task-model.js"
+import { sendMessageToClient } from "./ws-message-controller.js"
 
 const addSubtask = async (req, res) => {
   const { _id } = req.user
@@ -16,6 +18,14 @@ const addSubtask = async (req, res) => {
       label,
       parent: task_id
     })
+    if (task.room) {
+      createMessageAndSendToClient(
+        _id,
+        `(${label}) was added to Task (${task.label})`,
+        task.room,
+        task._id
+      )
+    }
     return res.json(subtask)
   } catch (error) {
     return res.status(500).json({ error })
@@ -23,7 +33,7 @@ const addSubtask = async (req, res) => {
 }
 
 const editSubtask = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
   const { label } = req.body
   const { id } = req.params
   if (!label) {
@@ -40,6 +50,14 @@ const editSubtask = async (req, res) => {
       return res.status(400).json({ message: "Permission denined" })
     subtask.label = label
     await subtask.save()
+    if (task.room) {
+      createMessageAndSendToClient(
+        _id,
+        `(${label}) of Task (${task.label}) was edited`,
+        task.room,
+        task._id
+      )
+    }
     return res.json(subtask)
   } catch (error) {
     return res.status(500).json({ error })
@@ -47,7 +65,7 @@ const editSubtask = async (req, res) => {
 }
 
 const removeSubtask = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
   const { id } = req.params
   try {
     const subtask = await SubTask.findById(id)
@@ -59,6 +77,14 @@ const removeSubtask = async (req, res) => {
     if (task.owner != _id && !task.assigned_to.includes(_id))
       return res.status(400).json({ message: "Permission denined" })
     await subtask.delete()
+    if (task.room) {
+      createMessageAndSendToClient(
+        _id,
+        `(${subtask.label}) was removed from Task (${task.label})`,
+        task.room,
+        task._id
+      )
+    }
     return res.json({ message: "Deleted succesfully" })
   } catch (error) {
     return res.status(500).json({ error })
@@ -66,7 +92,7 @@ const removeSubtask = async (req, res) => {
 }
 
 const markOrUnmarkSubtask = async (req, res) => {
-  const {_id} = req.user
+  const { _id } = req.user
   const { id } = req.params
   try {
     const subtask = await SubTask.findById(id)
@@ -79,10 +105,34 @@ const markOrUnmarkSubtask = async (req, res) => {
       return res.status(400).json({ message: "Permission denined" })
     subtask.is_completed = !subtask.is_completed
     await subtask.save()
+    if (task.room) {
+      createMessageAndSendToClient(
+        _id,
+        `(${subtask.label}) of (Task ${task.label}) was checked as ${subtask.is_completed? 'completed': 'incompleted'}`,
+        task.room,
+        task._id
+      )
+    }
     return res.json(subtask)
   } catch (error) {
     return res.status(500).json({ error })
   }
+}
+
+const createMessageAndSendToClient = (senderId, text, roomId, taskId) => {
+  Message.create({
+    type: 2,
+    text,
+    sender: senderId,
+    room: roomId,
+    task: taskId
+  })
+    .then(async (value) => {
+      sendMessageToClient(value, roomId)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
 }
 
 export { addSubtask, editSubtask, removeSubtask, markOrUnmarkSubtask }

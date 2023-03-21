@@ -57,7 +57,7 @@ const sendMessageToClient = (message, roomId, action = 1) => {
         )
       }
     }
-    if (data.type == 3 || data.type == 4) {
+    if (data.type == 3 || data.type == 4 || data.type == 5) {
       for (let i = 0; i < data.members.length; i++) {
         const uId = data.members[i]._id
         sendMesToClient(

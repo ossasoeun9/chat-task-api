@@ -5,6 +5,9 @@ import path from "path"
 import fs from "fs"
 import { getFileSize } from "../utils/file-utils.js"
 import Attachment from "../models/attachment-model.js"
+import Message from "../models/message-model.js"
+import { sendMessageToClient } from "./ws-message-controller.js"
+import User from "../models/user-model.js"
 
 const getTasks = (req, res) => {
   const { latest_timestamp, type } = req.query
@@ -54,6 +57,14 @@ const createTask = async (req, res) => {
       label: label,
       room
     })
+    if (room) {
+      createMessageAndSendToClient(
+        _id,
+        `Task (${label}) was created`,
+        room,
+        task._id
+      )
+    }
     return res.json(task)
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -65,7 +76,6 @@ const editTask = async (req, res) => {
   const { id } = req.params
   const {
     label,
-    room,
     depend_on,
     start_at,
     end_at,
@@ -92,7 +102,6 @@ const editTask = async (req, res) => {
     if (task.owner != _id && !task.assigned_to.includes(_id))
       return res.status(400).json({ message: "Permission denined" })
     task.label = label
-    task.room = room
     task.depend_on = depend_on ? JSON.parse(depend_on) : undefined
     task.start_at = start_at
     task.end_at = end_at
@@ -102,6 +111,14 @@ const editTask = async (req, res) => {
     task.progress = progress
     task.note = note
     await task.save()
+    if (task.room) {
+      createMessageAndSendToClient(
+        _id,
+        `Task (${label}) was edited`,
+        task.room,
+        task._id
+      )
+    }
     res.json(task)
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -130,6 +147,20 @@ const assignTaskTo = async (req, res) => {
     const updatedTask = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
+    if (updatedTask.room) {
+      const members = JSON.parse(member_ids)
+      for (let i = 0; i < members.length; i++) {
+        const user = await User.findById(members[i])
+        if (user) {
+          createMessageAndSendToClient(
+            _id,
+            `@${user.username} was assigned to Task (${task.label})`,
+            task.room,
+            id
+          )
+        }
+      }
+    }
     res.json(updatedTask)
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -158,6 +189,20 @@ const removeAssignTaskTo = async (req, res) => {
     const updatedTask = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
+    if (updatedTask.room) {
+      const members = JSON.parse(member_ids)
+      for (let i = 0; i < members.length; i++) {
+        const user = await User.findById(members[i])
+        if (user) {
+          createMessageAndSendToClient(
+            _id,
+            `@${user.username} was removed from Task (${updatedTask.label})`,
+            task.room,
+            id
+          )
+        }
+      }
+    }
     res.json(updatedTask)
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -175,6 +220,14 @@ const deleteTask = async (req, res) => {
       return res.status(400).json({ message: "Permission denined" })
     }
     await Task.delete({ _id: req.params.id })
+    if (task.room) {
+      createMessageAndSendToClient(
+        _id,
+        `Task (${task.label}) was deleted`,
+        task.room,
+        task._id
+      )
+    }
     return res.json({ message: "Delete successfully" })
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -206,6 +259,14 @@ const addAttachment = async (req, res) => {
       const updatedData = await Task.findById(id)
         .populate("subtasks")
         .populate("attachments")
+      if (task.room) {
+        createMessageAndSendToClient(
+          _id,
+          `${resFiles.length} attachments was added to Task (${task.label})`,
+          task.room,
+          task._id
+        )
+      }
       return res.json(updatedData)
     } else {
       const resFile = await storeAttachment(attachments.path, id, _id)
@@ -213,6 +274,14 @@ const addAttachment = async (req, res) => {
       const updatedData = await Task.findById(id)
         .populate("subtasks")
         .populate("attachments")
+      if (task.room) {
+        createMessageAndSendToClient(
+          _id,
+          `An attachment was added to Task (${task.label})`,
+          task.room,
+          task._id
+        )
+      }
       return res.json(updatedData)
     }
   } catch (error) {
@@ -269,10 +338,35 @@ const deleteAttachment = async (req, res) => {
     const updatedData = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
+    if (task.room) {
+      const ids = JSON.parse(attachment_ids)
+      createMessageAndSendToClient(
+        _id,
+        `${ids.length == 1? 'An attachment': `${ids.length} attachments`} was removed from Task (${task.label})`,
+        task.room,
+        task._id
+      )
+    }
     return res.json(updatedData)
   } catch (error) {
     return res.status(500).json({ error })
   }
+}
+
+const createMessageAndSendToClient = (senderId, text, roomId, taskId) => {
+  Message.create({
+    type: 2,
+    text,
+    sender: senderId,
+    room: roomId,
+    task: taskId
+  })
+    .then(async (value) => {
+      sendMessageToClient(value, roomId)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
 }
 
 export {
