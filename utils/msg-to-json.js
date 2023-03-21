@@ -20,6 +20,7 @@ const msgToJson = (message, userId) => {
     _id,
     sender,
     room,
+    task,
     ref_message,
     type,
     text,
@@ -31,7 +32,7 @@ const msgToJson = (message, userId) => {
     created_at,
     updated_at,
   } = message
-  let jsonMessage = { _id, room}
+  let jsonMessage = { _id, room, task}
 
   if (type) {
     jsonMessage.type = type
