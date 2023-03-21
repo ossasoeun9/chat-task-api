@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import mongoosePaginate from "mongoose-paginate-v2"
-// import fs from "fs"
-// import path from "path"
+import fs from "fs"
+import path from "path"
 
 const attachmentSchema = mongoose.Schema(
   {
@@ -9,46 +9,48 @@ const attachmentSchema = mongoose.Schema(
     size: Number,
     owner: {
       type: mongoose.Types.ObjectId,
-      ref: "User",
+      ref: "User"
     },
     task: {
       type: mongoose.Types.ObjectId,
-      ref: "Task",
-    },
+      ref: "Task"
+    }
   },
   {
     timestamps: {
       createdAt: "created_at",
-      updatedAt: "updated_at",
+      updatedAt: "updated_at"
     },
-    versionKey: false,
+    versionKey: false
   }
 )
 
 attachmentSchema.plugin(mongoosePaginate)
 
-// attachmentSchema.pre("deleteMany", function (next) {
-//   const query = this.getQuery()
-//   Attachment.find(query)
-//     .then((files) => {
-//       for (let i = 0; i < files.length; i++) {
-//         const file = files[i]
-//         fs.unlinkSync(path.normalize(`storage/attachments/${file.room}/${file.filename}`))
-//       }
-//       next()
-//     })
-//     .catch((error) => {
-//       console.log("Attachemnt Error:", error)
-//       next()
-//     })
-// })
+attachmentSchema.pre("deleteMany", function (next) {
+  const query = this.getQuery()
+  Attachment.find(query)
+    .then((attachments) => {
+      for (let i = 0; i < attachments.length; i++) {
+        const file = attachments[i]
+        fs.unlinkSync(
+          path.normalize(`storage/task-attachments/${file.task}/${file.filename}`)
+        )
+      }
+      next()
+    })
+    .catch((error) => {
+      console.log("Attachemnt Error:", error)
+      next()
+    })
+})
 
-attachmentSchema.set('toJSON', {
+attachmentSchema.set("toJSON", {
   transform: (doc, ret, opt) => {
-    ret.path = `files/${ret.room}/${ret.filename}`
+    ret.path = `task-attchments/${ret.task}/${ret.filename}`
     return ret
   }
 })
 
-const Attachment = mongoose.model("Attachemnt", attachmentSchema)
+const Attachment = mongoose.model("Attachment", attachmentSchema)
 export default Attachment

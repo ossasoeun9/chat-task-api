@@ -26,6 +26,7 @@
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^6.8.3",
     "mongoose-autopopulate": "^0.17.1",
+    "mongoose-delete": "^0.5.4",
     "mongoose-paginate-v2": "^1.7.1",
     "otp-generator": "^4.0.0",
     "ua-parser-js": "^1.0.32",
