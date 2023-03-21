@@ -44,7 +44,7 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: false
     },
-    rooms: [{ type: mongoose.Types.ObjectId, ref: "Chat Room" }]
+    rooms: [{ type: mongoose.Types.ObjectId, ref: "Chat Room", select: false }]
   },
   {
     timestamps: {

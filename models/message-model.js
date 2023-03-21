@@ -1,5 +1,4 @@
 import mongoose from "mongoose"
-import dotenv from "dotenv"
 import FileDB from "./file-model.js"
 import Media from "./media-model.js"
 import User from "./user-model.js"
@@ -7,9 +6,6 @@ import Url from "./url-model.js"
 import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongoosePaginate from "mongoose-paginate-v2"
-
-dotenv.config()
-const apiHost = process.env.API_HOST
 
 /*
 Note

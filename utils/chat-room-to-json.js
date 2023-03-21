@@ -24,6 +24,7 @@ const roomsToJson = (rooms, userId) => {
 const roomToJson = (room, userId) => {
   const {
     _id,
+    areas,
     name,
     profile_url,
     admin,
@@ -46,13 +47,17 @@ const roomToJson = (room, userId) => {
     newRoom.person = people[indexOfPerson]
   }
 
-  if (type == 3 || type == 4) {
+  if (type == 3 || type == 4 || type == 5) {
     newRoom.admin = admin
     newRoom.name = name
     newRoom.profile_url = profile_url
       ? `group-profile/${_id}/${profile_url}`
       : null
     newRoom.description = description
+  }
+
+  if (type == 5) {
+    newRoom.areas = areas
   }
 
   if (latest_message) {

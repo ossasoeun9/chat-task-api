@@ -14,57 +14,65 @@ Note
 2 is two people room
 3 is private group
 4 is public group
+5 is project room
 */
 
 const chatRoomSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      default: null,
+      default: null
     },
     profile_url: {
       type: String,
-      default: null,
+      default: null
     },
     admin: {
       type: mongoose.Types.ObjectId,
       ref: User,
-      default: null,
+      default: null
     },
+    areas: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Area",
+        default: null
+      }
+    ],
     type: {
       type: Number,
-      enum: [1, 2, 3, 4],
+      enum: [1, 2, 3, 4, 5]
     },
     description: {
       type: String,
-      default: null,
+      default: null
     },
     people: [
       {
         type: mongoose.Types.ObjectId,
         ref: User
-      },
+      }
     ],
     muted_by: [
       {
         type: mongoose.Types.ObjectId,
-        ref: User,
-      },
+        ref: User
+      }
     ],
-    members: [{ type: mongoose.Types.ObjectId, ref: User }],
+    members: [{ type: mongoose.Types.ObjectId, ref: User }]
   },
   {
     timestamps: {
       createdAt: "created_at",
-      updatedAt: "updated_at",
+      updatedAt: "updated_at"
     },
-    versionKey: false,
+    versionKey: false
   }
 )
 
 chatRoomSchema.set("toJSON", {
   virtuals: true,
-  getters: true,
+  getters: true
 })
 
 chatRoomSchema.set("toObject", { virtuals: true, getters: true })
@@ -74,10 +82,10 @@ chatRoomSchema.virtual("latest_message", {
   localField: "_id",
   foreignField: "room",
   justOne: true,
-  options: { sort: { created_at: -1 } },
+  options: { sort: { created_at: -1 } }
 })
-chatRoomSchema.virtual("total_member").get(function() {
-  return this.members? this.members.length: 0
+chatRoomSchema.virtual("total_member").get(function () {
+  return this.members ? this.members.length : 0
 })
 
 chatRoomSchema.virtual("unread", {
@@ -85,7 +93,7 @@ chatRoomSchema.virtual("unread", {
   localField: "_id",
   foreignField: "room",
   justOne: false,
-  count: true,
+  count: true
 })
 
 chatRoomSchema.plugin(mongooseAutoPopulate)
