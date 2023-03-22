@@ -61,7 +61,7 @@ app.use("/subtask", subtaskRoute)
 app.ws("/chats", wsController)
 app.ws("/message", wsMessageController)
 
-const port = process.env.PORT || 6005
+const port = process.env.PORT || 3000
 app.listen(port, () => {
   console.log(`ChatTask app listening on port ${port}!`)
 })
