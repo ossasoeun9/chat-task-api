@@ -1,0 +1,23 @@
+#  Template NodeJS build
+
+#  This template allows you to validate your NodeJS code.
+#  The workflow allows running tests and code linting on the default branch.
+
+image: node:18
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Pull From Current Branch
+            caches:
+              - node
+            script:
+              - git pull
+              - npm install
+        - step:
+            name: Restart Systemctl
+            script:
+              - systemctl restart chattask_api.service
+            caches:
+              - node
