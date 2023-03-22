@@ -11,14 +11,22 @@ import User from "../models/user-model.js"
 import SubTask from "../models/sub-task-model.js"
 
 const getTasks = (req, res) => {
-  const { latest_timestamp, type } = req.query
+  const { latest_timestamp } = req.query
   const { _id } = req.user
   let query = { $or: [{ owner: _id }, { assigned_to: { $in: [_id] } }] }
   if (latest_timestamp) {
     query.updated_at = { $gte: latest_timestamp, $ne: latest_timestamp }
   }
-  if (type == 1) {
-    return Task.find(query)
+  if (latest_timestamp) {
+    Task.findWithDeleted(query)
+      .populate("subtasks")
+      .populate("attachments")
+      .sort({ created_at: -1 })
+      .cursor()
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
+  } else {
+    Task.find(query)
       .populate("subtasks")
       .populate("attachments")
       .sort({ created_at: -1 })
@@ -26,22 +34,6 @@ const getTasks = (req, res) => {
       .pipe(JSONStream.stringify())
       .pipe(res.type("json"))
   }
-  if (type == 2) {
-    return Task.findDeleted(query)
-      .populate("subtasks")
-      .populate("attachments")
-      .sort({ created_at: -1 })
-      .cursor()
-      .pipe(JSONStream.stringify())
-      .pipe(res.type("json"))
-  }
-  return Task.findWithDeleted(query)
-    .populate("subtasks")
-    .populate("attachments")
-    .sort({ created_at: -1 })
-    .cursor()
-    .pipe(JSONStream.stringify())
-    .pipe(res.type("json"))
 }
 
 const createTask = async (req, res) => {

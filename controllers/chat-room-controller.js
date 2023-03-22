@@ -13,11 +13,18 @@ import es from "event-stream"
 
 const getChatRoom = async (req, res) => {
   const { _id } = req.user
+  const {type} = req.query
+
+  let query = {
+    $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }]
+  }
+
+  if (type) {
+    query.type = type
+  }
 
   try {
-    ChatRoom.find({
-      $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }]
-    })
+    ChatRoom.find(query)
       .populate({
         path: "people",
         select:
@@ -186,7 +193,7 @@ const createGroupChat = async (req, res) => {
     })
   }
 
-  const membersJson = members? JSON.parse(members): []
+  const membersJson = members ? JSON.parse(members) : []
 
   if (!Array.isArray(membersJson)) {
     return res.status(400).json({
@@ -213,7 +220,9 @@ const createGroupChat = async (req, res) => {
       sender: userId,
       room: _id,
       type: 1,
-      text: `@${user.username} created ${room_type != 5? 'this group': `${name} project`}`
+      text: `@${user.username} created ${
+        room_type != 5 ? "this group" : `${name} project`
+      }`
     })
     const room2 = await findAndSendToClient(_id, userId)
     return res.json(room2)
@@ -408,12 +417,9 @@ const joinChatRoom = async (req, res) => {
     )
     if (myRoom) return res.json(myRoom)
     await ChatRoom.updateOne({ _id: roomId }, { $addToSet: { members: [_id] } })
-    await User.updateOne(
-      { _id: _id },
-      { $addToSet: { rooms: [roomId] } }
-    )
+    await User.updateOne({ _id: _id }, { $addToSet: { rooms: [roomId] } })
     const user = await User.findById(_id)
-    
+
     await Message.create({
       sender: user.id,
       type: 1,
@@ -446,7 +452,7 @@ const leaveChatRoom = async (req, res) => {
         sendToClient(id, roomId, 3)
       }
       await User.updateMany(
-        { rooms: {$in: [roomId]} },
+        { rooms: { $in: [roomId] } },
         { $pullAll: { rooms: [roomId] } }
       )
       return res.json({
@@ -464,10 +470,7 @@ const leaveChatRoom = async (req, res) => {
       { _id: roomId },
       { $pull: { members: { $in: [_id] } } }
     )
-    await User.updateOne(
-      { _id: _id },
-      { $pullAll: { rooms: [roomId] } }
-    )
+    await User.updateOne({ _id: _id }, { $pullAll: { rooms: [roomId] } })
     sendMessageToClient(mes, roomId)
     sendToClient(_id, roomId, 3)
     const roomUpdated = await findAndSendToClient(roomId, _id, 2)

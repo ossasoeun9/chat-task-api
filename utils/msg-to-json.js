@@ -3,7 +3,7 @@ const paginateMessageToJson = (datas, userId) => {
   const newData = messagesToJson(data, userId)
   return {
     data: newData,
-    meta,
+    meta
   }
 }
 
@@ -20,6 +20,8 @@ const msgToJson = (message, userId) => {
     _id,
     sender,
     room,
+    deleted_by,
+    deleted,
     task,
     ref_message,
     type,
@@ -30,9 +32,11 @@ const msgToJson = (message, userId) => {
     files,
     read_by,
     created_at,
-    updated_at,
+    updated_at
   } = message
-  let jsonMessage = { _id, room, task}
+  let jsonMessage = { _id, room, task }
+
+  jsonMessage.deleted = deleted? deleted: deleted_by.includes(userId)
 
   if (type) {
     jsonMessage.type = type

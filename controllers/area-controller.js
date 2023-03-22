@@ -10,11 +10,19 @@ const getAreas = (req, res) => {
   if (latest_timestamp) {
     query.updated_at = { $gte: latest_timestamp, $ne: latest_timestamp }
   }
-  Area.find(query)
-    .sort({ created_at: -1 })
-    .cursor()
-    .pipe(JSONStream.stringify())
-    .pipe(res.type("json"))
+  if (latest_timestamp) {
+    Area.findWithDeleted(query)
+      .sort({ created_at: -1 })
+      .cursor()
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
+  } else {
+    Area.find(query)
+      .sort({ created_at: -1 })
+      .cursor()
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
+  }
 }
 
 const createArea = async (req, res) => {
@@ -107,7 +115,7 @@ const removeProjects = async (req, res) => {
   try {
     await ChatRoom.updateMany(
       { _id: { $in: projectsJson }, type: 5 },
-      {$pullAll: { areas: [id] }}
+      { $pullAll: { areas: [id] } }
     )
     ChatRoom.find({ _id: { $in: projectsJson }, type: 5 })
       .cursor({

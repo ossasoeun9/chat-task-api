@@ -16,6 +16,10 @@ import {
 import { sendToClient } from "../ws-chats-controller.js"
 import ChatRoom from "../../models/chat-room-model.js"
 import JSONStream from "JSONStream"
+import FileDB from "../../models/file-model.js"
+import Media from "../../models/media-model.js"
+import Voice from "../../models/voice-model.js"
+import Url from "../../models/url-model.js"
 
 const getMessage = async (req, res) => {
   const { _id } = req.user
@@ -53,23 +57,35 @@ const getAllMessages = async (req, res) => {
   const { roomId } = req.params
   const { latest_timestamp } = req.query
   let query = {
-    room: roomId,
-    deleted_by: { $nin: [_id] }
+    room: roomId
   }
 
   if (latest_timestamp) {
     query.updated_at = { $gte: latest_timestamp, $ne: latest_timestamp }
   }
 
-  Message.find(query)
-    .sort({ created_at: -1 })
-    .cursor({
-      transform: (data) => {
-        return msgToJson(data, _id)
-      }
-    })
-    .pipe(JSONStream.stringify())
-    .pipe(res.type("json"))
+  if (latest_timestamp) {
+    Message.findWithDeleted(query)
+      .sort({ created_at: -1 })
+      .cursor({
+        transform: (data) => {
+          return msgToJson(data, _id)
+        }
+      })
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
+  } else {
+    query.deleted_by = { $nin: [_id] }
+    Message.find(query)
+      .sort({ created_at: -1 })
+      .cursor({
+        transform: (data) => {
+          return msgToJson(data, _id)
+        }
+      })
+      .pipe(JSONStream.stringify())
+      .pipe(res.type("json"))
+  }
 }
 
 const readMessage = async (req, res) => {
@@ -81,8 +97,7 @@ const readMessage = async (req, res) => {
       $and: [
         { room: roomId },
         { sender: { $ne: _id } },
-        { read_by: { $nin: [_id] } },
-        { deleted_by: { $nin: [_id] } }
+        { read_by: { $nin: [_id] } }
       ]
     }).select("_id")
     const messageIds = oldMessage.map((mes) => mes._id)
@@ -91,8 +106,7 @@ const readMessage = async (req, res) => {
         $and: [
           { room: roomId },
           { sender: { $ne: _id } },
-          { read_by: { $nin: [_id] } },
-          { deleted_by: { $nin: [_id] } }
+          { read_by: { $nin: [_id] } }
         ]
       },
       {
@@ -108,15 +122,15 @@ const readMessage = async (req, res) => {
       }
     })
     Message.find({ _id: messageIds })
-      .populate({
-        path: "sender",
-        select: "_id first_name last_name profile_url is_online phone_number",
-        populate: {
-          path: "contact",
-          select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
-        }
-      })
+      // .populate({
+      //   path: "sender",
+      //   select: "_id first_name last_name profile_url is_online phone_number",
+      //   populate: {
+      //     path: "contact",
+      //     select: "-created_at -updated_at",
+      //     match: { owner: { $eq: _id } }
+      //   }
+      // })
       .then((mes) => {
         sendMessagesToClient(mes, roomId, 2)
       })
@@ -208,19 +222,39 @@ const deleteMessage = async (req, res) => {
     }
   } else {
     try {
-      var deletedMessage = await Message.find({
-        $and: [
-          {
-            _id: { $in: messagesJson }
-          },
-          { sender: _id }
-        ]
+      const deletedMessage = await Message.find({
+        $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
       })
-      await Message.deleteMany({
+      let fileIds = []
+      let mediaIds = []
+      let voiceIds = []
+      let urlIds = []
+      for (let i = 0; i < deletedMessage.length; i++) {
+        if (deletedMessage[i].files)
+          for (let j = 0; j < deletedMessage[i].files.length; j++) {
+            const file = deletedMessage[i].files[j]
+            fileIds.push(file._id)
+          }
+        if (deletedMessage[i].media)
+          for (let j = 0; j < deletedMessage[i].media.length; j++) {
+            const m = deletedMessage[i].media[j]
+            mediaIds.push(m._id)
+          }
+        if (deletedMessage[i].voice) voiceIds.push(deletedMessage[i].voice._id)
+        if (deletedMessage[i].url) urlIds.push(deletedMessage[i].url._id)
+      }
+      await FileDB.deleteMany({ _id: fileIds })
+      await Media.deleteMany({ _id: mediaIds })
+      await Voice.deleteMany({ _id: voiceIds })
+      await Url.deleteMany({ _id: urlIds })
+
+      await Message.delete({
         $and: [{ _id: { $in: messagesJson } }, { sender: _id }]
       })
       await Message.updateMany(
-        { $and: [{ _id: { $in: messagesJson } }] },
+        {
+          $and: [{ _id: { $in: messagesJson } }, { sender: { $ne: _id } }]
+        },
         { $addToSet: { deleted_by: [_id] } }
       )
       sendMesToClient(_id, { ids: messagesJson }, roomId, 3)

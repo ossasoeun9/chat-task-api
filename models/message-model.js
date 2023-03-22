@@ -6,6 +6,7 @@ import Url from "./url-model.js"
 import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongoosePaginate from "mongoose-paginate-v2"
+import mongooseDelete from "mongoose-delete"
 
 /*
 Note
@@ -106,6 +107,14 @@ messageSchema.set("toJSON", {
 
 messageSchema.plugin(mongooseAutoPopulate)
 messageSchema.plugin(mongoosePaginate)
+messageSchema.plugin(mongooseDelete, {
+  overrideMethods: "all"
+})
+
+messageSchema.index(
+  { updated_at: 1 },
+  { partialFilterExpression: { deleted: true }, expireAfterSeconds: 2592000 }
+)
 
 messageSchema.pre("deleteMany", function (next) {
   const query = this.getQuery()

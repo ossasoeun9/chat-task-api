@@ -55,7 +55,7 @@ taskSchema.plugin(mongooseDelete, {
 
 taskSchema.index(
   { updated_at: 1 },
-  { partialFilterExpression: { "deleted'": true }, expireAfterSeconds: 2592000 }
+  { partialFilterExpression: { deleted: true }, expireAfterSeconds: 2592000 }
 )
 
 taskSchema.virtual("attachments", {

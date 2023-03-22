@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import User from "./user-model.js"
+import mongooseDelete from "mongoose-delete"
 
 const areaSchema = mongoose.Schema(
   {
@@ -18,6 +19,15 @@ const areaSchema = mongoose.Schema(
     },
     versionKey: false
   }
+)
+
+areaSchema.plugin(mongooseDelete, {
+  overrideMethods: "all"
+})
+
+areaSchema.index(
+  { updated_at: 1 },
+  { partialFilterExpression: { deleted: true }, expireAfterSeconds: 2592000 }
 )
 
 const Area = mongoose.model("Area", areaSchema)
