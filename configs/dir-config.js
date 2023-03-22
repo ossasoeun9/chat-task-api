@@ -23,6 +23,9 @@ const createDir = () => {
     if (!fs.existsSync("storage/task-attachments")) {
       fs.mkdirSync("storage/task-attachments")
     }
+    if (!fs.existsSync("storage/task-media")) {
+      fs.mkdirSync("storage/task-media")
+    }
   } catch (err) {
     console.log(err)
   }

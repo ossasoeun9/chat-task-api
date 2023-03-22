@@ -1,5 +1,11 @@
 import express from "express"
 import {
+  deleteComment,
+  editComment,
+  getCommnets,
+  postCommnent
+} from "../controllers/commnent-controller.js"
+import {
   addAttachment,
   assignTaskTo,
   createTask,
@@ -7,7 +13,7 @@ import {
   deleteTask,
   editTask,
   getTasks,
-  removeAssignTaskTo,
+  removeAssignTaskTo
 } from "../controllers/task-controller.js"
 const router = express.Router()
 
@@ -19,5 +25,9 @@ router.post("/assign-to/:id", assignTaskTo)
 router.delete("/remove-assign-to/:id", removeAssignTaskTo)
 router.post("/add-attachment/:id", addAttachment)
 router.delete("/remove-attachment/:id", deleteAttachment)
+router.get("/comment/:id", getCommnets)
+router.post("/comment/:id/post", postCommnent)
+router.delete("/comment/:id/delete/:commentId", deleteComment)
+router.post("/comment/:id/edit/:commentId", editComment)
 
 export default router

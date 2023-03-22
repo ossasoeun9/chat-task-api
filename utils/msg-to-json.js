@@ -23,6 +23,7 @@ const msgToJson = (message, userId) => {
     deleted_by,
     deleted,
     task,
+    is_comment,
     ref_message,
     type,
     text,
@@ -34,7 +35,7 @@ const msgToJson = (message, userId) => {
     created_at,
     updated_at
   } = message
-  let jsonMessage = { _id, room, task }
+  let jsonMessage = { _id, room, task, is_comment }
 
   jsonMessage.deleted = deleted? deleted: deleted_by.includes(userId)
 
