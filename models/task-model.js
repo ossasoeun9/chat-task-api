@@ -1,9 +1,7 @@
 import mongoose from "mongoose"
-import Attachment from "./attachment-model.js"
 import User from "./user-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongooseDelete from "mongoose-delete"
-import SubTask from "./sub-task-model.js"
 
 /*
 Note:
@@ -55,6 +53,10 @@ taskSchema.plugin(mongooseDelete, {
   deletedByType: String
 })
 
+taskSchema.index(
+  { updated_at: 1 },
+  { partialFilterExpression: { "deleted'": true }, expireAfterSeconds: 2592000 }
+)
 
 taskSchema.virtual("attachments", {
   ref: "Attachment",

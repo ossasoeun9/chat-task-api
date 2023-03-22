@@ -19,7 +19,7 @@ const getCurrentLocal = async (req, res) => {
   }
 }
 
-const fetchPhoneCode = async (req, res) => {
+const fetchPhoneCode = (req, res) => {
   try {
     Country.find().cursor().pipe(JSONStream.stringify()).pipe(res.type("json"))
   } catch (error) {

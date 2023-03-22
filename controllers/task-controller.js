@@ -8,6 +8,7 @@ import Attachment from "../models/attachment-model.js"
 import Message from "../models/message-model.js"
 import { sendMessageToClient } from "./ws-message-controller.js"
 import User from "../models/user-model.js"
+import SubTask from "../models/sub-task-model.js"
 
 const getTasks = (req, res) => {
   const { latest_timestamp, type } = req.query
@@ -220,6 +221,8 @@ const deleteTask = async (req, res) => {
       return res.status(400).json({ message: "Permission denined" })
     }
     await Task.delete({ _id: req.params.id })
+    await Attachment.deleteMany({ task: req.params.id })
+    await SubTask.deleteMany({ parent: req.params.id })
     if (task.room) {
       createMessageAndSendToClient(
         _id,
@@ -342,7 +345,9 @@ const deleteAttachment = async (req, res) => {
       const ids = JSON.parse(attachment_ids)
       createMessageAndSendToClient(
         _id,
-        `${ids.length == 1? 'An attachment': `${ids.length} attachments`} was removed from Task (${task.label})`,
+        `${
+          ids.length == 1 ? "An attachment" : `${ids.length} attachments`
+        } was removed from Task (${task.label})`,
         task.room,
         task._id
       )
