@@ -13,10 +13,14 @@ import es from "event-stream"
 
 const getChatRoom = async (req, res) => {
   const { _id } = req.user
-  const {type} = req.query
+  const { type, latest_timestamp } = req.query
 
   let query = {
     $or: [{ people: { $in: [_id] } }, { members: { $in: [_id] } }]
+  }
+
+  if (latest_timestamp) {
+    query.updated_at = { $gte: latest_timestamp, $ne: latest_timestamp }
   }
 
   if (type) {

@@ -135,6 +135,7 @@ const readMessage = async (req, res) => {
       .then((mes) => {
         sendMessagesToClient(mes, roomId, 2)
       })
+    ChatRoom.updateOne({ _id: roomId }, { recieved_at: new Date() })
     return res.json(message)
   } catch (error) {
     return res.status(500).json({ error })
@@ -217,6 +218,7 @@ const deleteMessage = async (req, res) => {
         { $addToSet: { deleted_by: [_id] } }
       )
       sendMesToClient(_id, { ids: messagesJson }, roomId, 3)
+      ChatRoom.updateOne({ _id: roomId }, { recieved_at: new Date() })
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })
@@ -264,6 +266,7 @@ const deleteMessage = async (req, res) => {
       })
       sendMessageToClient(JSON.stringify({ ids }), roomId, 3)
       // return res.json({ deletedMessage })
+      ChatRoom.updateOne({ _id: roomId }, { recieved_at: new Date() })
       return res.json({ message: "Deleted" })
     } catch (error) {
       return res.json({ error })

@@ -7,6 +7,7 @@ import Voice from "./voice-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongoosePaginate from "mongoose-paginate-v2"
 import mongooseDelete from "mongoose-delete"
+import ChatRoom from "./chat-room-model.js"
 
 /*
 Note
@@ -114,6 +115,15 @@ messageSchema.index(
   { updated_at: 1 },
   { partialFilterExpression: { deleted: true }, expireAfterSeconds: 2592000 }
 )
+
+messageSchema.post("save", function(doc, next) {
+  console.log(doc)
+  ChatRoom.findById(this.room).then((chatRoom) => {
+    chatRoom.received_at = new Date()
+    chatRoom.save()
+  })
+  next()
+})
 
 messageSchema.pre("deleteMany", function (next) {
   const query = this.getQuery()

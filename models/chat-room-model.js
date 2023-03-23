@@ -59,7 +59,8 @@ const chatRoomSchema = new mongoose.Schema(
         ref: User
       }
     ],
-    members: [{ type: mongoose.Types.ObjectId, ref: User }]
+    members: [{ type: mongoose.Types.ObjectId, ref: User }],
+    received_at: { type: Date, default: Date.now(), select: false }
   },
   {
     timestamps: {
