@@ -8,6 +8,7 @@ import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongoosePaginate from "mongoose-paginate-v2"
 import mongooseDelete from "mongoose-delete"
 import ChatRoom from "./chat-room-model.js"
+import { sendNotification } from "../controllers/notification-controller.js"
 
 /*
 Note
@@ -116,8 +117,10 @@ messageSchema.index(
   { partialFilterExpression: { deleted: true }, expireAfterSeconds: 2592000 }
 )
 
-messageSchema.post("save", function(doc, next) {
-  console.log(doc)
+messageSchema.post("save", function (doc, next) {
+  if (this.created_at == this.updated_at) {
+    sendNotification(this._id)
+  }
   ChatRoom.findById(this.room).then((chatRoom) => {
     chatRoom.received_at = new Date()
     chatRoom.save()

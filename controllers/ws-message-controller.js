@@ -6,12 +6,15 @@ var clients = {}
 
 const wsMessageController = async (ws, req) => {
   const { _id } = req.user
-  clients[_id] = ws
+  if (!clients[_id] || !Array.isArray(clients[_id])) {
+    clients[_id] = []
+  }
+  clients[_id].push(ws)
   console.log("client:", _id, "connected")
   ws.on("close", async (message) => {
-    delete clients[_id]
+    clients[_id].pull(ws)
     console.log("client:", _id, "disconnected")
-    await User.updateOne({ _id }, { is_online: false })
+    await User.updateOne({ _id }, { is_online: { is_online: clients[_id].length > 0 } })
   })
 
   await User.updateOne({ _id }, { is_online: true })
@@ -72,9 +75,11 @@ const sendMessageToClient = (message, roomId, action = 1) => {
 }
 
 const sendMesToClient = (client, message, roomId, action = 1) => {
-  const ws = clients[client]
-  if (ws) {
-    ws.send(JSON.stringify({ action, room: roomId, message }))
+  const wsList = clients[client]
+  if (wsList && wsList.length > 0) {
+    for (let i = 0; i < wsList.length; i++) {
+      wsList[i].send(JSON.stringify({ action, room: roomId, message }))
+    }
   }
 }
 
@@ -82,5 +87,5 @@ export {
   wsMessageController,
   sendMesToClient,
   sendMessageToClient,
-  sendMessagesToClient,
+  sendMessagesToClient
 }

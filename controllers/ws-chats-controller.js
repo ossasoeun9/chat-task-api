@@ -6,20 +6,23 @@ var clients = {}
 
 const wsController = async (ws, req) => {
   const { _id } = req.user
-  clients[_id] = ws
+  if (!clients[_id] || !Array.isArray(clients[_id])) {
+    clients[_id] = []
+  }
+  clients[_id].push(ws)
   console.log("client:", _id, "connected")
   ws.on("close", async (message) => {
-    delete clients[_id]
+    clients[_id].pull(ws)
     console.log("client:", _id, "disconnected")
-    await User.updateOne({ _id }, { is_online: false })
+    await User.updateOne({ _id }, { is_online: clients[_id].length > 0 })
   })
 
   await User.updateOne({ _id }, { is_online: true })
 }
 
 const sendToClient = (client, roomId, action = 1) => {
-  const ws = clients[client]
-  if (ws) {
+  const wsList = clients[client]
+  if (wsList && wsList.length > 0) {
     if (action == 1 || action == 2) {
       ChatRoom.findOne({
         _id: roomId,
@@ -27,7 +30,8 @@ const sendToClient = (client, roomId, action = 1) => {
       })
         .populate({
           path: "people",
-          select: "_id first_name username last_name profile_url is_online phone_number",
+          select:
+            "_id first_name username last_name profile_url is_online phone_number",
           populate: {
             path: "contact",
             select: "-created_at -updated_at",
@@ -63,23 +67,31 @@ const sendToClient = (client, roomId, action = 1) => {
         .then((s) => {
           if (s) {
             const room = roomToJson(s, client.valueOf())
-            ws.send(JSON.stringify({ action, data: room }))
+            for (let i = 0; i < wsList.length; i++) {
+              wsList[i].send(JSON.stringify({ action, data: room }))
+            }
           } else {
-            ws.send(JSON.stringify({ action: 3, data: { _id: roomId } }))
+            for (let i = 0; i < wsList.length; i++) {
+              wsList[i].send(
+                JSON.stringify({ action: 3, data: { _id: roomId } })
+              )
+            }
           }
         })
         .catch((err) => {
           console.log(err)
         })
     } else {
-      ws.send(
-        JSON.stringify({
-          action,
-          data: {
-            _id: roomId
-          }
-        })
-      )
+      for (let i = 0; i < wsList.length; i++) {
+        wsList[i].send(
+          JSON.stringify({
+            action,
+            data: {
+              _id: roomId
+            }
+          })
+        )
+      }
     }
   }
 }
