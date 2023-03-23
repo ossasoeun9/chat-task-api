@@ -55,10 +55,9 @@ const getMessage = async (req, res) => {
 const getAllMessages = async (req, res) => {
   const { _id } = req.user
   const { roomId } = req.params
-  const { latest_timestamp, is_comment = false } = req.query
+  const { latest_timestamp, } = req.query
   let query = {
     room: roomId,
-    is_comment
   }
 
   if (latest_timestamp) {

@@ -12,7 +12,7 @@ const wsMessageController = async (ws, req) => {
   clients[_id].push(ws)
   console.log("client:", _id, "connected")
   ws.on("close", async (message) => {
-    clients[_id].pull(ws)
+    clients[_id].pop(ws)
     console.log("client:", _id, "disconnected")
     await User.updateOne({ _id }, { is_online: { is_online: clients[_id].length > 0 } })
   })
