@@ -11,47 +11,47 @@ const userSchema = mongoose.Schema(
     username: {
       type: String,
       unique: true,
-      requried: true
+      requried: true,
     },
     phone_number: {
       type: String,
       unique: true,
-      requried: true
+      requried: true,
     },
     country: {
       type: mongoose.Types.ObjectId,
       ref: Country,
       required: true,
-      auto_populate: true
+      auto_populate: true,
     },
     first_name: {
       type: String,
-      default: null
+      default: null,
     },
     last_name: {
       type: String,
-      default: null
+      default: null,
     },
     profile_url: {
       type: String,
-      default: null
+      default: null,
     },
     bio: {
       type: String,
-      default: null
+      default: null,
     },
     is_online: {
       type: Boolean,
-      default: false
+      default: false,
     },
-    rooms: [{ type: mongoose.Types.ObjectId, ref: "Chat Room", select: false }]
+    rooms: [{ type: mongoose.Types.ObjectId, ref: "Chat Room" }],
   },
   {
     timestamps: {
       createdAt: "created_at",
-      updatedAt: "updated_at"
+      updatedAt: "updated_at",
     },
-    versionKey: false
+    versionKey: false,
   }
 )
 
@@ -66,14 +66,14 @@ userSchema.set("toJSON", {
     return ret
   },
   virtuals: true,
-  getters: true
+  getters: true,
 })
 
 userSchema.virtual("contact", {
   ref: "Contact",
   localField: "phone_number",
   foreignField: "phone_number",
-  justOne: true
+  justOne: true,
 })
 
 userSchema.plugin(mongooseAutoPopulate)
