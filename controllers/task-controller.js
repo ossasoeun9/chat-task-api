@@ -78,7 +78,8 @@ const editTask = async (req, res) => {
     location,
     progress,
     note,
-    heading
+    heading,
+    room,
   } = req.body
 
   if (!label) {
@@ -106,6 +107,7 @@ const editTask = async (req, res) => {
     task.progress = progress
     task.heading = heading
     task.note = note
+    task.room = room
     await task.save()
     if (task.room) {
       createMessageAndSendToClient(
