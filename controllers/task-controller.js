@@ -38,7 +38,7 @@ const getTasks = (req, res) => {
 
 const createTask = async (req, res) => {
   const { _id } = req.user
-  const { label, room } = req.body
+  const { label, room, heading } = req.body
 
   if (!label) {
     return res.status(400).json({ message: "Label is required" })
@@ -48,6 +48,7 @@ const createTask = async (req, res) => {
     const task = await Task.create({
       owner: _id,
       label: label,
+      heading,
       room
     })
     if (room) {
@@ -76,7 +77,8 @@ const editTask = async (req, res) => {
     priority,
     location,
     progress,
-    note
+    note,
+    heading
   } = req.body
 
   if (!label) {
@@ -102,6 +104,7 @@ const editTask = async (req, res) => {
     task.priority = priority
     task.location = location ? JSON.parse(location) : undefined
     task.progress = progress
+    task.heading = heading
     task.note = note
     await task.save()
     if (task.room) {

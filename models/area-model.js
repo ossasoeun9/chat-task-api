@@ -10,7 +10,13 @@ const areaSchema = mongoose.Schema(
       required: true,
       ref: User,
       select: false
-    }
+    },
+    rooms: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Chat Room",
+      }
+    ],
   },
   {
     timestamps: {

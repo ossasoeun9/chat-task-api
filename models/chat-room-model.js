@@ -32,13 +32,6 @@ const chatRoomSchema = new mongoose.Schema(
       ref: User,
       default: null
     },
-    areas: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "Area",
-        default: null
-      }
-    ],
     type: {
       type: Number,
       enum: [1, 2, 3, 4, 5]

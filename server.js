@@ -17,6 +17,7 @@ import taskRoute from "./routes/task-route.js"
 import subtaskRoute from "./routes/subtask-route.js"
 import messageRoute from "./routes/message-route.js"
 import areaRoute from "./routes/area-route.js"
+import headingRoute from "./routes/heading-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
@@ -54,6 +55,7 @@ app.use("/contacts", contactRoute)
 app.use("/chat-rooms", chatRoomRoute)
 app.use("/messages", messageRoute)
 app.use("/areas", areaRoute)
+app.use("/heading", headingRoute)
 app.use("/task", taskRoute)
 app.use("/subtask", subtaskRoute)
 

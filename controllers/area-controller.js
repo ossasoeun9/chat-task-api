@@ -41,7 +41,7 @@ const createArea = async (req, res) => {
 
 const editArea = async (req, res) => {
   const { _id } = req.user
-  const { label } = req.body
+  const { label, room_ids } = req.body
   const { id } = req.params
   if (!label) {
     return res.status(400).json("Label is required")
@@ -52,6 +52,9 @@ const editArea = async (req, res) => {
       return res.status(400).json({ message: "Room not found" })
     }
     area[0].label = label
+    if (room_ids) {
+      area[0].rooms = JSON.parse(room_ids)
+    }
     await area[0].save()
     return res.json(area[0])
   } catch (error) {
