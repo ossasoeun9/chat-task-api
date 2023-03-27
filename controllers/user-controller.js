@@ -121,7 +121,9 @@ const setProfilePicture = async (req, res) => {
     const oldUser = await User.findById(_id)
     if (oldUser.profile_url) {
       const deleteFullPath = dir + oldUser.profile_url
-      fs.unlinkSync(deleteFullPath)
+      if (!fs.existsSync(deleteFullPath)) {
+        fs.unlinkSync(deleteFullPath)
+      }
     }
 
     // read
@@ -154,7 +156,9 @@ const removeProfilePicure = async (req, res) => {
 
   try {
     await User.updateOne({ _id }, { profile_url: null })
-    fs.unlinkSync(`storage/user-profile/${_id}/${profile_url}`)
+    if (!fs.existsSync(`storage/user-profile/${_id}/${profile_url}`)) {
+      fs.unlinkSync(`storage/user-profile/${_id}/${profile_url}`)
+    }
   } catch (error) {
     return res.status(500).json({
       message: error

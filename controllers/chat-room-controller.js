@@ -513,7 +513,9 @@ const setChatRommProfile = async (req, res) => {
     const oldRoom = await ChatRoom.findById(roomId)
     if (oldRoom.profile_url) {
       const deleteFullPath = dir + oldRoom.profile_url
-      fs.unlinkSync(deleteFullPath)
+      if (!fs.existsSync(deleteFullPath)) {
+        fs.unlinkSync(deleteFullPath)
+      }
     }
 
     // read
@@ -548,7 +550,9 @@ const removeChatRoomProfile = async (req, res) => {
 
   try {
     await ChatRoom.updateOne({ _id: roomId }, { profile_url: null })
-    fs.unlinkSync(`storage/group-profile/${roomId}/${profile_url}`)
+    if (!fs.existsSync(`storage/group-profile/${roomId}/${profile_url}`)) {
+      fs.unlinkSync(`storage/group-profile/${roomId}/${profile_url}`)
+    }
   } catch (error) {
     return res.status(500).json({
       message: error
