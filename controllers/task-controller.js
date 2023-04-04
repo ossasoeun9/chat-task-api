@@ -38,7 +38,19 @@ const getTasks = (req, res) => {
 
 const createTask = async (req, res) => {
   const { _id } = req.user
-  const { label, room, heading } = req.body
+  const {
+    label,
+    depend_on,
+    start_at,
+    end_at,
+    status,
+    priority,
+    location,
+    progress,
+    note,
+    heading,
+    room
+  } = req.body
 
   if (!label) {
     return res.status(400).json({ message: "Label is required" })
@@ -49,7 +61,15 @@ const createTask = async (req, res) => {
       owner: _id,
       label: label,
       heading,
-      room
+      room,
+      location: location ? JSON.parse(location) : undefined,
+      depend_on,
+      start_at,
+      end_at,
+      status,
+      priority,
+      progress,
+      note
     })
     if (room) {
       createMessageAndSendToClient(
