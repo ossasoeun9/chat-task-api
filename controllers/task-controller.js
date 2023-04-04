@@ -253,7 +253,7 @@ const addAttachment = async (req, res) => {
       for (let i = 0; i < attachments.length; i++) {
         const element = attachments[i]
         var sss = await storeAttachment(element.path, id, _id)
-        sss.original_name = element.originalFilename
+        sss.original_name = path.basename(element.originalFilename)
         resFiles.push(sss)
       }
       await Attachment.insertMany(resFiles)
@@ -271,7 +271,7 @@ const addAttachment = async (req, res) => {
       return res.json(updatedData)
     } else {
       var resFile = await storeAttachment(attachments.path, id, _id)
-      resFile.original_name = attachments.originalFilename
+      resFile.original_name = path.basename(attachments.originalFilename)
       await Attachment.create(resFile)
       const updatedData = await Task.findById(id)
         .populate("subtasks")

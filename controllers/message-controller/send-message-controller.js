@@ -138,7 +138,7 @@ const sendMedia = async (req, res) => {
       for (let i = 0; i < media.length; i++) {
         const element = media[i]
         var sss = await storeMedia(element.path, roomId, _id)
-        sss.original_name = element.originalFilename
+        sss.original_name = path.basename(element.originalFilename)
         resMedia.push(sss)
       }
       const newMedia = await Media.insertMany(resMedia)
@@ -160,7 +160,7 @@ const sendMedia = async (req, res) => {
     } else {
       const resMedia = await storeMedia(media.path, roomId, _id)
       var newMedia = await Media.create(resMedia)
-      newMedia.original_name = media.originalFilename
+      newMedia.original_name = path.basename(media.originalFilename)
       Message.create({
         sender: _id,
         room: roomId,
@@ -240,7 +240,7 @@ const sendFiles = async (req, res) => {
       for (let i = 0; i < files.length; i++) {
         const element = files[i]
         var sss = storeFile(element.path, roomId, _id)
-        sss.original_name = element.originalFilename
+        sss.original_name = path.basename(element.originalFilename)
         resFiles.push(sss)
       }
       const newFile = await FileDB.insertMany(resFiles)
@@ -261,8 +261,7 @@ const sendFiles = async (req, res) => {
         })
     } else {
       var resFile = storeFile(files.path, roomId, _id)
-      resFile.original_name = files.originalFilename
-      console.log(files)
+      resFile.original_name = path.basename(files.originalFilename)
       const newFile = await FileDB.create(resFile)
       Message.create({
         sender: _id,
