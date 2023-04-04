@@ -79,7 +79,7 @@ const editTask = async (req, res) => {
     progress,
     note,
     heading,
-    room,
+    room
   } = req.body
 
   if (!label) {
@@ -252,7 +252,8 @@ const addAttachment = async (req, res) => {
       var resFiles = []
       for (let i = 0; i < attachments.length; i++) {
         const element = attachments[i]
-        const sss = await storeAttachment(element.path, id, _id)
+        var sss = await storeAttachment(element.path, id, _id)
+        sss.original_name = element.originalFilename
         resFiles.push(sss)
       }
       await Attachment.insertMany(resFiles)
@@ -269,7 +270,8 @@ const addAttachment = async (req, res) => {
       }
       return res.json(updatedData)
     } else {
-      const resFile = await storeAttachment(attachments.path, id, _id)
+      var resFile = await storeAttachment(attachments.path, id, _id)
+      resFile.original_name = attachments.originalFilename
       await Attachment.create(resFile)
       const updatedData = await Task.findById(id)
         .populate("subtasks")

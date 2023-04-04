@@ -6,6 +6,7 @@ import path from "path"
 const mediaSchema = mongoose.Schema(
   {
     filename: String,
+    original_name: String,
     size: Number,
     duration: Number, // Second
     is_video: Boolean,

@@ -6,6 +6,7 @@ import path from "path"
 const attachmentSchema = mongoose.Schema(
   {
     filename: String,
+    original_name: String,
     size: Number,
     owner: {
       type: mongoose.Types.ObjectId,

@@ -108,7 +108,7 @@ const sendVoice = async (req, res) => {
       room: roomId,
       type: 4,
       voice: newVoice._id,
-      ref_message,
+      ref_message
     })
       .then(async (value) => {
         sendMessageToClient(value, roomId)
@@ -137,7 +137,8 @@ const sendMedia = async (req, res) => {
       var resMedia = []
       for (let i = 0; i < media.length; i++) {
         const element = media[i]
-        const sss = await storeMedia(element.path, roomId, _id)
+        var sss = await storeMedia(element.path, roomId, _id)
+        sss.original_name = element.originalFilename
         resMedia.push(sss)
       }
       const newMedia = await Media.insertMany(resMedia)
@@ -147,7 +148,7 @@ const sendMedia = async (req, res) => {
         text,
         type: 5,
         media: newMedia,
-        ref_message,
+        ref_message
       })
         .then(async (value) => {
           sendMessageToClient(value, roomId)
@@ -158,7 +159,8 @@ const sendMedia = async (req, res) => {
         })
     } else {
       const resMedia = await storeMedia(media.path, roomId, _id)
-      const newMedia = await Media.create(resMedia)
+      var newMedia = await Media.create(resMedia)
+      newMedia.original_name = media.originalFilename
       Message.create({
         sender: _id,
         room: roomId,
@@ -237,7 +239,8 @@ const sendFiles = async (req, res) => {
       var resFiles = []
       for (let i = 0; i < files.length; i++) {
         const element = files[i]
-        const sss = storeFile(element.path, roomId, _id)
+        var sss = storeFile(element.path, roomId, _id)
+        sss.original_name = element.originalFilename
         resFiles.push(sss)
       }
       const newFile = await FileDB.insertMany(resFiles)
@@ -257,7 +260,9 @@ const sendFiles = async (req, res) => {
           res.status(500).json({ error })
         })
     } else {
-      const resFile = storeFile(files.path, roomId, _id)
+      var resFile = storeFile(files.path, roomId, _id)
+      resFile.original_name = files.originalFilename
+      console.log(files)
       const newFile = await FileDB.create(resFile)
       Message.create({
         sender: _id,
