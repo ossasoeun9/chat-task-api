@@ -22,6 +22,7 @@ import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
 import path from "path";
+import fs from "fs";
 
 dotenv.config()
 connectDB()
@@ -61,13 +62,22 @@ app.use("/group-profile", (req, res, next) => {
   }
 });
 // app.use("/voice-messages", express.static("storage/voice-messages"))
-app.use("/voice-messages", () => {
+app.get('/voice-messages/:fileName', (req, res) => {
   try {
-    express.static("storage/voice-messages")
-    // express.static(path.join(__dirname, "storage", "voice-messages"))(req, res, next);
-  } catch (error) {
-    // console.error(error);
-    // res.status(404).send("File not found");
+    const fileName = req.params.fileName;
+    const filePath = path.join(__dirname, 'storage/voice-messages', fileName);
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error('File not found');
+    }
+
+    res.download(filePath, fileName, (err) => {
+      if (err) {
+        throw new Error('Error downloading file');
+      }
+    });
+  } catch (err) {
+    res.status(404).send(err.message);
   }
 });
 // app.use("/media", express.static("storage/media"))
