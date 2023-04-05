@@ -21,6 +21,7 @@ import headingRoute from "./routes/heading-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
+import path from "path";
 
 dotenv.config()
 connectDB()
@@ -31,8 +32,6 @@ const options = {
   uploadDir: os.tmpdir(),
   autoClean: true
 }
-
-const path = require("path");
 
 const app = express()
 expressWs(app)
