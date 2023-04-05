@@ -21,7 +21,7 @@ import headingRoute from "./routes/heading-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
-import {getFile, getGroupProfile, getMedia, getVoiceMessage} from "./controllers/file-controller.js";
+import {getFile, getGroupProfile, getMedia, getUserProfile, getVoiceMessage} from "./controllers/file-controller.js";
 
 dotenv.config()
 connectDB()
