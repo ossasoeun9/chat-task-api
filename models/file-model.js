@@ -34,7 +34,11 @@ fileSchema.pre("deleteMany", function (next) {
     .then((files) => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        fs.unlinkSync(path.normalize(`storage/files/${file.room}/${file.filename}`))
+        try {
+            fs.unlinkSync(path.normalize(`storage/files/${file.room}/${file.filename}`))
+        }catch (e) {
+
+        }
       }
       next()
     })
