@@ -61,12 +61,13 @@ app.use("/group-profile", (req, res, next) => {
   }
 });
 // app.use("/voice-messages", express.static("storage/voice-messages"))
-app.use("/voice-messages", (req, res, next) => {
+app.use("/voice-messages", () => {
   try {
-    express.static(path.join(__dirname, "storage", "voice-messages"))(req, res, next);
+    express.static("storage/voice-messages")
+    // express.static(path.join(__dirname, "storage", "voice-messages"))(req, res, next);
   } catch (error) {
-    console.error(error);
-    res.status(404).send("File not found");
+    // console.error(error);
+    // res.status(404).send("File not found");
   }
 });
 // app.use("/media", express.static("storage/media"))
