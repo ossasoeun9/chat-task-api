@@ -69,7 +69,7 @@ app.get('/voice-messages/:id/:name', (req, res) => {
   const voiceMessage = path.join("storage/voice-messages/"+id+"/", name);
 
   if (voiceMessage) {
-    res.json(voiceMessage);
+    express.static("storage/voice-messages");
   } else {
     res.status(404).send('Voice message not found');
   }
