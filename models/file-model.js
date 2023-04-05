@@ -46,7 +46,11 @@ fileSchema.pre("deleteMany", function (next) {
 
 fileSchema.set('toJSON', {
   transform: (doc, ret, opt) => {
-    ret.path = `files/${ret.room}/${ret.filename}`
+    try {
+        ret.path = `files/${ret.room}/${ret.filename}`
+    }catch (e) {
+        ret.path = `default.png`
+    }
     return ret
   }
 })
