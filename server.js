@@ -62,12 +62,10 @@ app.use("/group-profile", (req, res, next) => {
   }
 });
 // app.use("/voice-messages", express.static("storage/voice-messages"))
-
-
-app.use('/voice-messages', (req, res) => {
-  const voiceMessagesPath = path.join(process.cwd(), 'storage', 'voice-messages');
+app.use('/voice-messages/:fileName', (req, res) => {
   try {
-    const filePath = path.join(voiceMessagesPath, req.params[0]);
+    const fileName = req.params.fileName;
+    const filePath = path.join(fileName, '/storage/voice-messages', req.url);
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
     } else {
@@ -77,7 +75,24 @@ app.use('/voice-messages', (req, res) => {
     res.status(500).send(err.message);
   }
 });
-
+// app.get('/voice-messages/:fileName', (req, res) => {
+//   try {
+//     const fileName = req.params.fileName;
+//     const filePath = path.join(__dirname, 'storage/voice-messages', fileName);
+//
+//     if (!fs.existsSync(filePath)) {
+//       throw new Error('File not found');
+//     }
+//
+//     res.download(filePath, fileName, (err) => {
+//       if (err) {
+//         throw new Error('Error downloading file');
+//       }
+//     });
+//   } catch (err) {
+//     res.status(404).send(err.message);
+//   }
+// });
 // app.use("/media", express.static("storage/media"))
 app.use("/media", (req, res, next) => {
   try {
