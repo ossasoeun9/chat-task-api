@@ -43,26 +43,40 @@ app.use(formData.parse(options))
 
 app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
-// app.use("/user-profile", express.static("storage/user-profile"))
-app.use("/user-profile", (req, res, next) => {
-  try {
-    express.static(path.join(__dirname, "storage", "user-profile"))(req, res, next);
-  } catch (error) {
-    console.error(error);
-    res.status(404).send("File not found");
-  }
-});
-// app.use("/group-profile", express.static("storage/group-profile"))
-app.use("/group-profile", (req, res, next) => {
-  try {
-    express.static(path.join(__dirname, "storage", "group-profile"))(req, res, next);
-  } catch (error) {
-    console.error(error);
-    res.status(404).send("File not found");
-  }
-});
-// app.use("/voice-messages", express.static("storage/voice-messages"))
 
+// app.use("/user-profile", express.static("storage/user-profile"))
+const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
+
+app.use('/user-profile', (req, res) => {
+  try {
+    const filePath = path.join(userProfilePath, req.url);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('File not found');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// app.use("/group-profile", express.static("storage/group-profile"))
+const groupProfilePath = path.join(process.cwd(), 'storage', 'group-profile');
+
+app.use('/group-profile', (req, res) => {
+  try {
+    const filePath = path.join(groupProfilePath, req.url);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('File not found');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// app.use("/voice-messages", express.static("storage/voice-messages"))
 const voiceMessagesPath = path.join(process.cwd(), 'storage', 'voice-messages');
 
 app.use('/voice-messages', (req, res) => {
@@ -78,53 +92,35 @@ app.use('/voice-messages', (req, res) => {
   }
 });
 
-// app.get('/voice-messages/:id/:name', (req, res) => {
-//   const id = req.params.id;
-//   const name = req.params.name;
-//
-//   const voiceMessage = path.join("storage/voice-messages/"+id+"/", name);
-//
-//   if (voiceMessage) {
-//     express.static("storage/voice-messages");
-//   } else {
-//     res.status(404).send('Voice message not found');
-//   }
-// });
-
-// app.get('/voice-messages/:fileName', (req, res) => {
-//   try {
-//     const fileName = req.params.fileName;
-//     const filePath = path.join(__dirname, 'storage/voice-messages', fileName);
-//
-//     if (!fs.existsSync(filePath)) {
-//       throw new Error('File not found');
-//     }
-//
-//     res.download(filePath, fileName, (err) => {
-//       if (err) {
-//         throw new Error('Error downloading file');
-//       }
-//     });
-//   } catch (err) {
-//     res.status(404).send(err.message);
-//   }
-// });
 // app.use("/media", express.static("storage/media"))
-app.use("/media", (req, res, next) => {
+const mediaPath = path.join(process.cwd(), 'storage', 'media');
+
+app.use('/media', (req, res) => {
   try {
-    express.static(path.join(__dirname, "storage", "media"))(req, res, next);
-  } catch (error) {
-    console.error(error);
-    res.status(404).send("File not found");
+    const filePath = path.join(mediaPath, req.url);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('File not found');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
+
 // app.use("/files", express.static("storage/files"))
-app.use("/files", (req, res, next) => {
+const filePath = path.join(process.cwd(), 'storage', 'files');
+
+app.use('/files', (req, res) => {
   try {
-    express.static(path.join(__dirname, "storage", "files"))(req, res, next);
-  } catch (error) {
-    console.error(error);
-    res.status(404).send("File not found");
+    const filePath = path.join(filePath, req.url);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('File not found');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 
