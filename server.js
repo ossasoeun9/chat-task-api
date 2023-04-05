@@ -61,7 +61,19 @@ app.use("/group-profile", (req, res, next) => {
     res.status(404).send("File not found");
   }
 });
-app.use("/voice-messages", express.static("storage/voice-messages"))
+// app.use("/voice-messages", express.static("storage/voice-messages"))
+app.use('/voice-messages', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '/storage/voice-messages', req.url);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('File not found');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
 // app.get('/voice-messages/:fileName', (req, res) => {
 //   try {
 //     const fileName = req.params.fileName;
