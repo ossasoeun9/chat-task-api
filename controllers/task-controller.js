@@ -63,7 +63,7 @@ const createTask = async (req, res) => {
       heading,
       room,
       location: location ? JSON.parse(location) : undefined,
-      depend_on,
+      depend_on: depend_on ? JSON.parse(depend_on) : undefined,
       start_at,
       end_at,
       status,
