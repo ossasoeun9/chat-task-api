@@ -21,8 +21,7 @@ import headingRoute from "./routes/heading-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
-import path from "path";
-import fs from "fs";
+import {getFile, getGroupProfile, getMedia, getVoiceMessage} from "./controllers/file-controller.js";
 
 dotenv.config()
 connectDB()
@@ -44,85 +43,21 @@ app.use(formData.parse(options))
 app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
 
-// app.use("/user-profile", express.static("storage/user-profile"))
-const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
 
-app.use('/user-profile', (req, res) => {
-  try {
-    const filePath = path.join(userProfilePath, req.url);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).send('File not found');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
+// app.use("/user-profile", express.static("storage/user-profile"))
+app.use('/user-profile', getUserProfile);
 
 // app.use("/group-profile", express.static("storage/group-profile"))
-const groupProfilePath = path.join(process.cwd(), 'storage', 'group-profile');
-
-app.use('/group-profile', (req, res) => {
-  try {
-    const filePath = path.join(groupProfilePath, req.url);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).send('File not found');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
+app.use('/group-profile', getGroupProfile);
 
 // app.use("/voice-messages", express.static("storage/voice-messages"))
-const voiceMessagesPath = path.join(process.cwd(), 'storage', 'voice-messages');
-
-app.use('/voice-messages', (req, res) => {
-  try {
-    const filePath = path.join(voiceMessagesPath, req.url);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).send('File not found');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
+app.use('/voice-messages', getVoiceMessage);
 
 // app.use("/media", express.static("storage/media"))
-const mediaPath = path.join(process.cwd(), 'storage', 'media');
-
-app.use('/media', (req, res) => {
-  try {
-    const filePath = path.join(mediaPath, req.url);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).send('File not found');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
+app.use('/media', getMedia);
 
 // app.use("/files", express.static("storage/files"))
-const filePath = path.join(process.cwd(), 'storage', 'files');
-
-app.use('/files', (req, res) => {
-  try {
-    const filePath = path.join(filePath, req.url);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).send('File not found');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
+app.use('/files', getFile);
 
 // Protected route
 app.use(verifyToken)

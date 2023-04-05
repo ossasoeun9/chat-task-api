@@ -1,5 +1,5 @@
 /.env
 /node_modules
-/storage
 
 !/storage/default.png
+/storage
