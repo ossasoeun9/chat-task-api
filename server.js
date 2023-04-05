@@ -62,17 +62,16 @@ app.use("/group-profile", (req, res, next) => {
   }
 });
 // app.use("/voice-messages", express.static("storage/voice-messages"))
-app.use('/voice-messages/:fileName', (req, res) => {
-  try {
-    const fileName = req.params.fileName;
-    const filePath = path.join(fileName, '/storage/voice-messages', req.url);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).send('File not found');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
+app.get('/voice-messages/:id/:name', (req, res) => {
+  const id = req.params.id;
+  const name = req.params.name;
+
+  const voiceMessage = path.join("storage/voice-messages/"+id+"/", name);
+
+  if (voiceMessage) {
+    res.json(voiceMessage);
+  } else {
+    res.status(404).send('Voice message not found');
   }
 });
 // app.get('/voice-messages/:fileName', (req, res) => {
