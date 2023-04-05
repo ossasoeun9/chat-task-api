@@ -21,6 +21,7 @@ import headingRoute from "./routes/heading-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
+import path from "path";
 
 dotenv.config()
 connectDB()
@@ -41,11 +42,51 @@ app.use(formData.parse(options))
 
 app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
-app.use("/user-profile", express.static("storage/user-profile"))
-app.use("/group-profile", express.static("storage/group-profile"))
-app.use("/voice-messages", express.static("storage/voice-messages"))
-app.use("/media", express.static("storage/media"))
-app.use("/files", express.static("storage/files"))
+// app.use("/user-profile", express.static("storage/user-profile"))
+app.use("/user-profile", (req, res, next) => {
+  try {
+    express.static(path.join(__dirname, "storage", "user-profile"))(req, res, next);
+  } catch (error) {
+    console.error(error);
+    res.status(404).send("File not found");
+  }
+});
+// app.use("/group-profile", express.static("storage/group-profile"))
+app.use("/group-profile", (req, res, next) => {
+  try {
+    express.static(path.join(__dirname, "storage", "group-profile"))(req, res, next);
+  } catch (error) {
+    console.error(error);
+    res.status(404).send("File not found");
+  }
+});
+// app.use("/voice-messages", express.static("storage/voice-messages"))
+app.use("/voice-messages", (req, res, next) => {
+  try {
+    express.static(path.join(__dirname, "storage", "voice-messages"))(req, res, next);
+  } catch (error) {
+    console.error(error);
+    res.status(404).send("File not found");
+  }
+});
+// app.use("/media", express.static("storage/media"))
+app.use("/media", (req, res, next) => {
+  try {
+    express.static(path.join(__dirname, "storage", "media"))(req, res, next);
+  } catch (error) {
+    console.error(error);
+    res.status(404).send("File not found");
+  }
+});
+// app.use("/files", express.static("storage/files"))
+app.use("/files", (req, res, next) => {
+  try {
+    express.static(path.join(__dirname, "storage", "files"))(req, res, next);
+  } catch (error) {
+    console.error(error);
+    res.status(404).send("File not found");
+  }
+});
 
 // Protected route
 app.use(verifyToken)

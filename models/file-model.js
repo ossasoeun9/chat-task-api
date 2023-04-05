@@ -34,7 +34,11 @@ fileSchema.pre("deleteMany", function (next) {
     .then((files) => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        fs.unlinkSync(path.normalize(`storage/files/${file.room}/${file.filename}`))
+        try {
+            fs.unlinkSync(path.normalize(`storage/files/${file.room}/${file.filename}`))
+        }catch (e) {
+
+        }
       }
       next()
     })
@@ -46,7 +50,11 @@ fileSchema.pre("deleteMany", function (next) {
 
 fileSchema.set('toJSON', {
   transform: (doc, ret, opt) => {
-    ret.path = `files/${ret.room}/${ret.filename}`
+    try {
+        ret.path = `files/${ret.room}/${ret.filename}`
+    }catch (e) {
+        ret.path = `default.png`
+    }
     return ret
   }
 })
