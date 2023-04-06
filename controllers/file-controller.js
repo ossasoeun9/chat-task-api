@@ -6,7 +6,7 @@ const __dirname = "./"
 const defaultImagePath = "asset-data/default.png"
 const glitchSound = "asset-data/glitch-sound.mp3"
 
-const userProfilePath = path.join(process.cwd(), "storage", "user-profile")
+const userProfilePath = path.join(root, "storage", "user-profile")
 
 const getUserProfile = async (req, res) => {
   try {
@@ -14,18 +14,14 @@ const getUserProfile = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      // requested image file not found, serve default image instead
-      res.sendFile(path.join(__dirname, defaultImagePath));
-      // res.sendFile(defaultImagePath)
-      // res.status(404).send('File not found');
+      res.sendFile(path.join(__dirname, '..', defaultImagePath));
     }
   } catch (err) {
-    res.sendFile(path.join(__dirname, defaultImagePath));
-    // res.status(500).send(err.message);
+    res.sendFile(path.join(__dirname, '..', defaultImagePath));
   }
 }
 
-const groupProfilePath = path.join(process.cwd(), "storage", "group-profile")
+const groupProfilePath = path.join(root, "storage", "group-profile")
 
 const getGroupProfile = async (req, res) => {
   try {
@@ -33,16 +29,14 @@ const getGroupProfile = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      res.sendFile(path.join(__dirname, defaultImagePath));
-      // res.status(404).send('File not found');
+      res.sendFile(path.join(__dirname, '..', defaultImagePath));
     }
   } catch (err) {
-    res.sendFile(path.join(__dirname, defaultImagePath));
-    // res.status(500).send(err.message);
+    res.sendFile(path.join(__dirname, '..', defaultImagePath));
   }
 }
 
-const voiceMessagesPath = path.join(process.cwd(), "storage", "voice-messages")
+const voiceMessagesPath = path.join(root, "storage", "voice-messages")
 
 const getVoiceMessage = async (req, res) => {
   try {
@@ -50,16 +44,14 @@ const getVoiceMessage = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      res.sendFile(path.join(__dirname, glitchSound));
-      // res.status(404).send('File not found');
+      res.sendFile(path.join(__dirname, '..', glitchSound));
     }
   } catch (err) {
-    res.sendFile(path.join(__dirname, glitchSound));
-    // res.status(500).send(err.message);
+    res.sendFile(path.join(__dirname, '..', glitchSound));
   }
 }
 
-const mediaPath = path.join(process.cwd(), "storage", "media")
+const mediaPath = path.join(root, "storage", "media")
 
 const getMedia = async (req, res) => {
   try {
@@ -67,16 +59,14 @@ const getMedia = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      res.sendFile(path.join(__dirname, defaultImagePath));
-      // res.status(404).send('File not found');
+      res.sendFile(path.join(__dirname, '..', defaultImagePath));
     }
   } catch (err) {
-    res.sendFile(path.join(__dirname, defaultImagePath));
-    // res.status(500).send(err.message);
+    res.sendFile(path.join(__dirname, '..', defaultImagePath));
   }
 }
 
-const filePathww = path.join(process.cwd(), "storage", "files")
+const filePathww = path.join(root, "storage", "files")
 
 const getFile = async (req, res) => {
   try {
@@ -84,12 +74,10 @@ const getFile = async (req, res) => {
     if (fs.existsSync(newFilePath)) {
       res.sendFile(newFilePath)
     } else {
-      res.sendFile(path.join(__dirname, defaultImagePath));
-      // res.status(404).send('File not found');
+      res.sendFile(path.join(__dirname, '..', defaultImagePath));
     }
   } catch (err) {
-    res.sendFile(path.join(__dirname, defaultImagePath));
-    // res.status(500).send(err.message);
+    res.sendFile(path.join(__dirname, '..', defaultImagePath));
   }
 }
 
