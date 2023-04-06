@@ -2,8 +2,9 @@ import path from "path"
 import fs from "fs"
 
 const root = process.cwd()
-const defaultImagePath = path.join(root, 'asset-data', 'default.png');
-const glitchSound = path.join(root, 'asset-data', 'glitch-sound.mp3');
+const __dirname = "."
+const defaultImagePath = path.join(__dirname, 'asset-data', 'default.png');
+const glitchSound = path.join(__dirname, 'asset-data', 'glitch-sound.mp3');
 
 const userProfilePath = path.join(root, "storage", "user-profile")
 
