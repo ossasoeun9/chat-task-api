@@ -42,7 +42,11 @@ const getVoiceMessage = async (req, res) => {
   try {
     const filePath = path.join(voiceMessagesPath, req.url)
     if (fs.existsSync(filePath)) {
-      res.sendFile(filePath)
+      // res.sendFile(filePath)
+      const readStream = fs.createReadStream(filePath);
+      readStream.on('open', function () {
+        readStream.pipe(res);
+      });
     } else {
       res.sendFile(path.join(root, '..', glitchSound));
     }
