@@ -2,9 +2,8 @@ import path from "path"
 import fs from "fs"
 
 const root = process.cwd()
-const __dirname = "./"
-const defaultImagePath = "asset-data/default.png"
-const glitchSound = "asset-data/glitch-sound.mp3"
+const defaultImagePath = path.join(root, 'asset-data', 'default.png');
+const glitchSound = path.join(root, 'asset-data', 'glitch-sound.mp3');
 
 const userProfilePath = path.join(root, "storage", "user-profile")
 
@@ -14,10 +13,10 @@ const getUserProfile = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      res.sendFile(path.join(root, '..', defaultImagePath));
+      res.sendFile(defaultImagePath);
     }
   } catch (err) {
-    res.sendFile(path.join(root, '..', defaultImagePath));
+    res.sendFile(defaultImagePath);
   }
 }
 
@@ -29,10 +28,10 @@ const getGroupProfile = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      res.sendFile(path.join(root, '..', defaultImagePath));
+      res.sendFile(defaultImagePath);
     }
   } catch (err) {
-    res.sendFile(path.join(root, '..', defaultImagePath));
+    res.sendFile(defaultImagePath);
   }
 }
 
@@ -48,10 +47,10 @@ const getVoiceMessage = async (req, res) => {
         readStream.pipe(res);
       });
     } else {
-      res.sendFile(path.join(root, '..', glitchSound));
+      res.sendFile(glitchSound);
     }
   } catch (err) {
-    res.sendFile(path.join(root, '..', glitchSound));
+    res.sendFile(glitchSound);
   }
 }
 
@@ -63,10 +62,10 @@ const getMedia = async (req, res) => {
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath)
     } else {
-      res.sendFile(path.join(root, '..', defaultImagePath));
+      res.sendFile(defaultImagePath);
     }
   } catch (err) {
-    res.sendFile(path.join(root, '..', defaultImagePath));
+    res.sendFile(defaultImagePath);
   }
 }
 
@@ -78,10 +77,10 @@ const getFile = async (req, res) => {
     if (fs.existsSync(newFilePath)) {
       res.sendFile(newFilePath)
     } else {
-      res.sendFile(path.join(root, '..', defaultImagePath));
+      res.sendFile(defaultImagePath);
     }
   } catch (err) {
-    res.sendFile(path.join(root, '..', defaultImagePath));
+    res.sendFile(defaultImagePath);
   }
 }
 
