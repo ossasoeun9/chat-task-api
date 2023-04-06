@@ -2,7 +2,7 @@ import path from "path"
 import fs from "fs"
 
 const root = process.cwd()
-const __dirname = "."
+const __dirname = "./"
 const defaultImagePath = path.join(__dirname, 'asset-data', 'default.png');
 const glitchSound = path.join(__dirname, 'asset-data', 'glitch-sound.mp3');
 
@@ -64,6 +64,7 @@ const getMedia = async (req, res) => {
       res.sendFile(filePath)
     } else {
       res.sendFile(defaultImagePath);
+      return defaultImagePath;
     }
   } catch (err) {
     res.sendFile(defaultImagePath);
