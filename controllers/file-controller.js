@@ -3,7 +3,7 @@ import fs from "fs"
 
 const root = process.cwd()
 
-const defaultImagePath = path.normalize(`${root}/asset-data/default.png`)
+const defaultImagePath = "asset-data/default.png"
 const glitchSound = path.normalize(`${root}/asset-data/glitch-sound.mp3`)
 
 const userProfilePath = path.join(process.cwd(), "storage", "user-profile")
