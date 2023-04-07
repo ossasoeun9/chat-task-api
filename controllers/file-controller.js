@@ -32,22 +32,20 @@ const getUserProfile = async (req, res) => {
 const groupProfilePath = path.join(process.cwd(), 'storage', 'group-profile');
 
 const getGroupProfile = async (req, res) => {
-    express.static("storage/group-profile")
-
-    // try {
-    //     const filePath = path.join(groupProfilePath, req.url);
-    //     if (fs.existsSync(filePath)) {
-    //         res.sendFile(filePath);
-    //     } else {
-    //         // const filePath = path.join(defaultImagePath, req.url);
-    //         // res.sendFile(filePath);
-    //         res.status(404).send('File not found');
-    //     }
-    // } catch (err) {
-    //     // const filePath = path.join(defaultImagePath, req.url);
-    //     // res.sendFile(filePath);
-    //     res.status(500).send(err.message);
-    // }
+    try {
+        const filePath = path.join(groupProfilePath, req.url);
+        if (fs.existsSync(filePath)) {
+            res.sendFile(filePath);
+        } else {
+            // const filePath = path.join(defaultImagePath, req.url);
+            // res.sendFile(filePath);
+            res.status(404).send('File not found');
+        }
+    } catch (err) {
+        // const filePath = path.join(defaultImagePath, req.url);
+        // res.sendFile(filePath);
+        res.status(500).send(err.message);
+    }
 }
 
 const voiceMessagesPath = path.join(process.cwd(), 'storage', 'voice-messages');

@@ -44,8 +44,8 @@ app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
 
 
-// app.use("/user-profile", express.static("storage/user-profile"))
-app.use('/user-profile', getUserProfile);
+app.use("/user-profile", express.static("storage/user-profile"))
+// app.use('/user-profile', getUserProfile);
 
 app.use("/group-profile", express.static("storage/group-profile"))
 // app.use('/group-profile', getGroupProfile);
