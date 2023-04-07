@@ -1,5 +1,7 @@
 // import path from "path";
 // import fs from "fs";
+import express from "express";
+
 const path = require('path');
 const fs = require('fs');
 const defaultImagePath = "./storage/default.png";
@@ -30,14 +32,8 @@ const getUserProfile = async (req, res) => {
 const groupProfilePath = path.join(process.cwd(), 'storage', 'group-profile');
 
 const getGroupProfile = async (req, res) => {
-    const filePath = path.join(groupProfilePath, req.url);
+    express.static("storage/group-profile")
 
-    res.sendFile(filePath, { root: groupProfilePath }, (err) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('Internal server error');
-        }
-    });
     // try {
     //     const filePath = path.join(groupProfilePath, req.url);
     //     if (fs.existsSync(filePath)) {
