@@ -321,7 +321,7 @@ const storeAttachment = async (filePath, taskId, userId) => {
   }
 
   const filename =
-    Date.now() + "." + randomBytes(6).toString("hex") + path.extname(filePath)
+    Date.now() + "_" + randomBytes(6).toString("hex") + path.extname(filePath)
 
   const fullPath = path.normalize(`${dir}/${filename}`)
 

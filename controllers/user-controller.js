@@ -117,7 +117,7 @@ const setProfilePicture = async (req, res) => {
 
   const filename =
     Date.now() +
-    "." +
+    "_" +
     randomBytes(6).toString("hex") +
     path.extname(profile.originalFilename)
 

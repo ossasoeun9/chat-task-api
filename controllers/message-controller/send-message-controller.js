@@ -78,7 +78,7 @@ const sendVoice = async (req, res) => {
 
   const filename =
     Date.now() +
-    "." +
+    "_" +
     randomBytes(6).toString("hex") +
     path.extname(voice.originalFilename)
 
@@ -193,7 +193,7 @@ const storeMedia = async (filePath, roomId, userId) => {
   }
 
   const filename =
-    Date.now() + "." + randomBytes(6).toString("hex") + path.extname(filePath)
+    Date.now() + "_" + randomBytes(6).toString("hex") + path.extname(filePath)
 
   const fullPath = path.normalize(`${dir}/${filename}`)
 
@@ -294,7 +294,7 @@ const storeFile = (filePath, roomId, userId) => {
   }
 
   const filename =
-    Date.now() + "." + randomBytes(6).toString("hex") + path.extname(filePath)
+    Date.now() + "_" + randomBytes(6).toString("hex") + path.extname(filePath)
 
   const fullPath = path.normalize(`${dir}/${filename}`)
 
