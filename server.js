@@ -47,8 +47,8 @@ app.use("/auth", authRoute)
 // app.use("/user-profile", express.static("storage/user-profile"))
 app.use('/user-profile', getUserProfile);
 
-// app.use("/group-profile", express.static("storage/group-profile"))
-app.use('/group-profile', getGroupProfile);
+app.use("/group-profile", express.static("storage/group-profile"))
+// app.use('/group-profile', getGroupProfile);
 
 // app.use("/voice-messages", express.static("storage/voice-messages"))
 app.use('/voice-messages', getVoiceMessage);
