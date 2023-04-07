@@ -1,4 +1,5 @@
 import Message from "../../models/message-model.js"
+import "core-js"
 import {
   forwardMessage,
   sendFiles,
@@ -7,7 +8,11 @@ import {
   sendUrl,
   sendVoice
 } from "./send-message-controller.js"
-import { msgToJson, paginateMessageToJson } from "../../utils/msg-to-json.js"
+import {
+  messagesToJson,
+  msgToJson,
+  paginateMessageToJson
+} from "../../utils/msg-to-json.js"
 import {
   sendMesToClient,
   sendMessageToClient,
@@ -55,9 +60,9 @@ const getMessage = async (req, res) => {
 const getAllMessages = async (req, res) => {
   const { _id } = req.user
   const { roomId } = req.params
-  const { latest_timestamp, } = req.query
+  const { latest_timestamp } = req.query
   let query = {
-    room: roomId,
+    room: roomId
   }
 
   if (latest_timestamp) {
@@ -113,27 +118,19 @@ const readMessage = async (req, res) => {
         $addToSet: { read_by: [_id] }
       }
     )
-    ChatRoom.findById(roomId).then((data) => {
-      for (let i = 0; i < data.people.length; i++) {
-        sendToClient(data.people[i]._id, roomId, 2)
-      }
-      for (let i = 0; i < data.members.length; i++) {
-        sendToClient(data.members[i], roomId, 2)
+    Message.find({ _id: messageIds}).then((mes) => {
+      var gropMessage = mes.group((message) => message.sender)
+      var senderIds = Object.keys(gropMessage)
+      for (var i = 0; i < senderIds.length; i++) {
+        var senderId = senderIds[i]
+        sendMesToClient(
+          senderId,
+          messagesToJson(gropMessage[senderId], senderId),
+          roomId,
+          2
+        )
       }
     })
-    Message.find({ _id: messageIds })
-      // .populate({
-      //   path: "sender",
-      //   select: "_id first_name last_name profile_url is_online phone_number",
-      //   populate: {
-      //     path: "contact",
-      //     select: "-created_at -updated_at",
-      //     match: { owner: { $eq: _id } }
-      //   }
-      // })
-      .then((mes) => {
-        sendMessagesToClient(mes, roomId, 2)
-      })
     ChatRoom.updateOne({ _id: roomId }, { recieved_at: new Date() })
     return res.json(message)
   } catch (error) {
