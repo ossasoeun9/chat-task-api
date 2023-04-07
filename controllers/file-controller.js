@@ -4,14 +4,6 @@ import fs from "fs";
 const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
 
 const getUserProfile = async (req, res) => {
-    // const filePath = path.join(userProfilePath, req.url);
-    //
-    // res.sendFile(filePath, { root: userProfilePath }, (err) => {
-    //     if (err) {
-    //         console.error(err);
-    //         res.status(500).send('Internal server error');
-    //     }
-    // });
     try {
         const filePath = path.join(userProfilePath, req.url);
         if (fs.existsSync(filePath)) {
@@ -32,13 +24,9 @@ const getGroupProfile = async (req, res) => {
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
-            // const filePath = path.join(defaultImagePath, req.url);
-            // res.sendFile(filePath);
             res.status(404).send('File not found');
         }
     } catch (err) {
-        // const filePath = path.join(defaultImagePath, req.url);
-        // res.sendFile(filePath);
         res.status(500).send(err.message);
     }
 }
@@ -51,13 +39,9 @@ const getVoiceMessage = async (req, res) => {
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
-            // const filePath = path.join(defaultImagePath, req.url);
-            // res.sendFile(filePath);
             res.status(404).send('File not found');
         }
     } catch (err) {
-        // const filePath = path.join(defaultImagePath, req.url);
-        // res.sendFile(filePath);
         res.status(500).send(err.message);
     }
 }
@@ -70,13 +54,9 @@ const getMedia = async (req, res) => {
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
-            // const filePath = path.join(defaultImagePath, req.url);
-            // res.sendFile(filePath);
             res.status(404).send('File not found');
         }
     } catch (err) {
-        // const filePath = path.join(defaultImagePath, req.url);
-        // res.sendFile(filePath);
         res.status(500).send(err.message);
     }
 }
@@ -89,13 +69,9 @@ const getFile = async (req, res) => {
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
-            // const filePath = path.join(defaultImagePath, req.url);
-            // res.sendFile(filePath);
             res.status(404).send('File not found');
         }
     } catch (err) {
-        // const filePath = path.join(defaultImagePath, req.url);
-        // res.sendFile(filePath);
         res.status(500).send(err.message);
     }
 }
