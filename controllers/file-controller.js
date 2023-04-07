@@ -1,10 +1,5 @@
-// import path from "path";
-// import fs from "fs";
-import express from "express";
-
-const path = require('path');
-const fs = require('fs');
-const defaultImagePath = "./storage/default.png";
+import path from "path";
+import fs from "fs";
 
 const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
 
