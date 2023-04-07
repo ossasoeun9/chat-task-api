@@ -105,8 +105,14 @@ const setProfilePicture = async (req, res) => {
 
   const dir = `storage/user-profile/${_id}/`
 
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir)
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: error
+    });
   }
 
   const filename =
@@ -119,11 +125,17 @@ const setProfilePicture = async (req, res) => {
   try {
     // delete old image
     const oldUser = await User.findById(_id)
-    if (oldUser.profile_url) {
-      const deleteFullPath = dir + oldUser.profile_url
-      if (!fs.existsSync(deleteFullPath)) {
-        fs.unlinkSync(deleteFullPath)
+    try {
+      if (oldUser.profile_url) {
+        const deleteFullPath = dir + oldUser.profile_url;
+        if (fs.existsSync(deleteFullPath)) {
+          fs.unlinkSync(deleteFullPath);
+        }
       }
+    } catch (error) {
+      return res.status(500).json({
+        message: error
+      });
     }
 
     // read
