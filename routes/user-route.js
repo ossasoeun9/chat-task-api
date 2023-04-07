@@ -7,7 +7,7 @@ import {
   getUsers,
   removeProfilePicure,
   requestChangePhoneNumber,
-  setProfilePicture,
+  setProfilePicture, upload,
   verifyChangePhoneNumber,
 } from "../controllers/user-controller.js"
 
@@ -20,7 +20,7 @@ router.post("/edit-bio", editBio)
 router.post("/change-username", changeUsername)
 router.post("/request-change-phone-number", requestChangePhoneNumber)
 router.post("/verify-change-phone-number", verifyChangePhoneNumber)
-router.post("/set-profile-picture", setProfilePicture)
+router.post("/set-profile-picture",upload.single("profile"), setProfilePicture)
 router.delete("/remove-profile-picture", removeProfilePicure)
 
 export default router

@@ -8,6 +8,7 @@ import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
+import multer from "multer";
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -94,6 +95,88 @@ const editBio = async (req, res) => {
   }
 }
 
+// const setProfilePicture = async (req, res) => {
+//   const { _id } = req.user
+//   const { profile } = req.files
+//
+//   if (!profile)
+//     return res.status(400).json({
+//       message: "Profile is required"
+//     })
+//
+//   const dir = `storage/user-profile/${_id}/`
+//
+//   try {
+//     if (!fs.existsSync(dir)) {
+//       fs.mkdirSync(dir);
+//     }
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error
+//     });
+//   }
+//
+//   const filename =
+//     Date.now() +
+//     "_" +
+//     randomBytes(6).toString("hex") +
+//     path.extname(profile.originalFilename)
+//
+//   const fullPath = path.normalize(`${dir}/${filename}`)
+//   try {
+//     // delete old image
+//     const oldUser = await User.findById(_id)
+//     try {
+//       if (oldUser.profile_url) {
+//         const deleteFullPath = dir + oldUser.profile_url;
+//         if (fs.existsSync(deleteFullPath)) {
+//           fs.unlinkSync(deleteFullPath);
+//         }
+//       }
+//     } catch (error) {
+//       return res.status(500).json({
+//         message: error
+//       });
+//     }
+//
+//     // read
+//     const content = fs.readFileSync(profile.path)
+//
+//     // write
+//     fs.writeFileSync(fullPath, content)
+//     await User.updateOne({ _id }, { profile_url: filename })
+//
+//     // clear tmp dir
+//     fs.unlinkSync(profile.path)
+//
+//     const user = await User.findById(_id).populate("country")
+//     return res.json(user)
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error
+//     })
+//   }
+// }
+
+// configure multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const { _id } = req.user
+    const dir = `storage/user-profile/${_id}/`
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    cb(null, dir)
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname)
+    const filename = `${Date.now()}_${randomBytes(6).toString("hex")}${ext}`
+    cb(null, filename)
+  }
+})
+
+const upload = multer({ storage })
+
 const setProfilePicture = async (req, res) => {
   const { _id } = req.user
   const { profile } = req.files
@@ -103,31 +186,12 @@ const setProfilePicture = async (req, res) => {
       message: "Profile is required"
     })
 
-  const dir = `storage/user-profile/${_id}/`
-
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
-    }
-  } catch (error) {
-    return res.status(500).json({
-      message: error
-    });
-  }
-
-  const filename =
-    Date.now() +
-    "_" +
-    randomBytes(6).toString("hex") +
-    path.extname(profile.originalFilename)
-
-  const fullPath = path.normalize(`${dir}/${filename}`)
   try {
     // delete old image
     const oldUser = await User.findById(_id)
     try {
       if (oldUser.profile_url) {
-        const deleteFullPath = dir + oldUser.profile_url;
+        const deleteFullPath = path.normalize(`${dir}/${oldUser.profile_url}`)
         if (fs.existsSync(deleteFullPath)) {
           fs.unlinkSync(deleteFullPath);
         }
@@ -138,15 +202,9 @@ const setProfilePicture = async (req, res) => {
       });
     }
 
-    // read
-    const content = fs.readFileSync(profile.path)
-
-    // write
-    fs.writeFileSync(fullPath, content)
+    // update user profile picture
+    const filename = profile.filename
     await User.updateOne({ _id }, { profile_url: filename })
-
-    // clear tmp dir
-    fs.unlinkSync(profile.path)
 
     const user = await User.findById(_id).populate("country")
     return res.json(user)
@@ -295,5 +353,6 @@ export {
   removeProfilePicure,
   requestChangePhoneNumber,
   changeUsername,
-  verifyChangePhoneNumber
+  verifyChangePhoneNumber,
+    upload
 }
