@@ -112,10 +112,10 @@ const setProfilePicture = async (req, res) => {
   const filename =
       Date.now() +
       randomBytes(6).toString("hex") +
-      path.extname(profile.originalFilename)
+      path.extname(profile.path)
 
   const fullPath = path.normalize(`${dir}/${filename}`)
-  try {
+  // try {
     // delete old image
     const oldUser = await User.findById(_id)
     if (oldUser.profile_url) {
@@ -133,15 +133,15 @@ const setProfilePicture = async (req, res) => {
     await User.updateOne({ _id }, { profile_url: filename })
 
     // clear tmp dir
-    // fs.unlinkSync(profile.path)
+    fs.unlinkSync(profile.path)
 
     const user = await User.findById(_id).populate("country")
     return res.json(user)
-  } catch (error) {
-    return res.status(500).json({
-      message: error
-    })
-  }
+  // } catch (error) {
+  //   return res.status(500).json({
+  //     message: error
+  //   })
+  // }
 }
 
 const removeProfilePicure = async (req, res) => {
