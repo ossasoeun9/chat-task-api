@@ -294,6 +294,5 @@ export {
   removeProfilePicure,
   requestChangePhoneNumber,
   changeUsername,
-  verifyChangePhoneNumber,
-  upload
+  verifyChangePhoneNumber
 }
