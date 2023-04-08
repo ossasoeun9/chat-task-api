@@ -133,7 +133,7 @@ const setProfilePicture = async (req, res) => {
     await User.updateOne({ _id }, { profile_url: filename })
 
     // clear tmp dir
-    fs.unlinkSync(profile.path)
+    // fs.unlinkSync(profile.path)
 
     const user = await User.findById(_id).populate("country")
     return res.json(user)
