@@ -95,109 +95,66 @@ const editBio = async (req, res) => {
   }
 }
 
-// const setProfilePicture = async (req, res) => {
-//   const { _id } = req.user
-//   const { profile } = req.files
-//
-//   if (!profile)
-//     return res.status(400).json({
-//       message: "Profile is required"
-//     })
-//
-//   const dir = `storage/user-profile/${_id}/`
-//
-//   try {
-//     if (!fs.existsSync(dir)) {
-//       fs.mkdirSync(dir);
-//     }
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: error
-//     });
-//   }
-//
-//   const filename =
-//     Date.now() +
-//     "_" +
-//     randomBytes(6).toString("hex") +
-//     path.extname(profile.originalFilename)
-//
-//   const fullPath = path.normalize(`${dir}/${filename}`)
-//   try {
-//     // delete old image
-//     const oldUser = await User.findById(_id)
-//     try {
-//       if (oldUser.profile_url) {
-//         const deleteFullPath = dir + oldUser.profile_url;
-//         if (fs.existsSync(deleteFullPath)) {
-//           fs.unlinkSync(deleteFullPath);
-//         }
-//       }
-//     } catch (error) {
-//       return res.status(500).json({
-//         message: error
-//       });
-//     }
-//
-//     // read
-//     const content = fs.readFileSync(profile.path)
-//
-//     // write
-//     fs.writeFileSync(fullPath, content)
-//     await User.updateOne({ _id }, { profile_url: filename })
-//
-//     // clear tmp dir
-//     fs.unlinkSync(profile.path)
-//
-//     const user = await User.findById(_id).populate("country")
-//     return res.json(user)
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: error
-//     })
-//   }
-// }
+const setProfilePicture = async (req, res) => {
+  const { _id } = req.user
+  const { profile } = req.files
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const { _id } = req.user;
-    const dir = `storage/user-profile/${_id}/`;
+  if (!profile)
+    return res.status(400).json({
+      message: "Profile is required"
+    })
+
+  const dir = `storage/user-profile/${_id}/`
+
+  try {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const filename = `${Date.now()}_${randomBytes(6).toString('hex')}${ext}`;
-    cb(null, filename);
-  },
-});
-
-const upload = multer({ storage });
-
-const setProfilePicture = async (req, res) => {
-  const {_id} = req.user;
-  const {profile} = req.file;
-  const dir = `storage/user-profile/${_id}/`;
-  if (!profile) {
-    return res.status(400).json({message: 'Image is required'});
-  }
-
-  try {
-    // Save the image to disk
-    const fullPath = path.normalize(`${dir}/${profile.filename}`);
-    fs.writeFileSync(fullPath, profile.buffer);
-
-    // Update the user's profile_url in the database
-    await User.updateOne({_id}, {profile_url: profile.filename});
-
-    const user = await User.findById(_id).populate('country');
-    return res.json(user);
   } catch (error) {
-    return res.status(500).json({message: error});
+    return res.status(500).json({
+      message: error
+    });
   }
-};
+
+  const ext = path.extname(profile.originalname);
+  const filename = `${Date.now()}_${randomBytes(6).toString('hex')}${ext}`;
+
+  const fullPath = path.normalize(`${dir}/${filename}`)
+  try {
+    // delete old image
+    const oldUser = await User.findById(_id)
+    try {
+      if (oldUser.profile_url) {
+        const deleteFullPath = dir + oldUser.profile_url;
+        if (fs.existsSync(deleteFullPath)) {
+          fs.unlinkSync(deleteFullPath);
+        }
+      }
+    } catch (error) {
+      return res.status(500).json({
+        message: error
+      });
+    }
+
+    // read
+    const content = fs.readFileSync(profile.path)
+
+    // write
+    fs.writeFileSync(fullPath, content)
+    await User.updateOne({ _id }, { profile_url: filename })
+
+    // clear tmp dir
+    fs.unlinkSync(profile.path)
+
+    const user = await User.findById(_id).populate("country")
+    return res.json(user)
+  } catch (error) {
+    return res.status(500).json({
+      message: error
+    })
+  }
+}
+
 
 const removeProfilePicure = async (req, res) => {
   const { _id } = req.user

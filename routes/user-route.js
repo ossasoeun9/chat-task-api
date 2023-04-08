@@ -9,7 +9,6 @@ import {
   requestChangePhoneNumber,
   setProfilePicture,
   verifyChangePhoneNumber,
-  upload,
 } from "../controllers/user-controller.js"
 
 const router = express.Router()
@@ -21,7 +20,7 @@ router.post("/edit-bio", editBio)
 router.post("/change-username", changeUsername)
 router.post("/request-change-phone-number", requestChangePhoneNumber)
 router.post("/verify-change-phone-number", verifyChangePhoneNumber)
-router.post("/set-profile-picture",upload.single('profile'), setProfilePicture)
+router.post("/set-profile-picture", setProfilePicture)
 router.delete("/remove-profile-picture", removeProfilePicure)
 
 export default router
