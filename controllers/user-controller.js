@@ -8,7 +8,6 @@ import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
-import multer from "multer";
 
 dotenv.config()
 const apiKey = process.env.API_KEY
