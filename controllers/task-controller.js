@@ -20,6 +20,8 @@ const getTasks = (req, res) => {
   if (latest_timestamp) {
     Task.findWithDeleted(query)
       .populate("subtasks")
+      .populate("owner")
+      .populate("assigned_to")
       .populate("attachments")
       .sort({ created_at: -1 })
       .cursor()
@@ -28,6 +30,8 @@ const getTasks = (req, res) => {
   } else {
     Task.find(query)
       .populate("subtasks")
+      .populate("owner")
+      .populate("assigned_to")
       .populate("attachments")
       .sort({ created_at: -1 })
       .cursor()
