@@ -59,18 +59,6 @@ taskSchema.index(
   { partialFilterExpression: { deleted: true }, expireAfterSeconds: 2592000 }
 )
 
-taskSchema.virtual("owner", {
-    ref: "User",
-    localField: "_id",
-    foreignField: "task"
-})
-
-taskSchema.virtual("assigned_to", {
-    ref: "User",
-    localField: "_id",
-    foreignField: "task"
-})
-
 taskSchema.virtual("attachments", {
   ref: "Attachment",
   localField: "_id",
