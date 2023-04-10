@@ -135,9 +135,7 @@ const editTask = async (req, res) => {
     task.heading = heading
     task.note = note
     task.room = room
-    if(member_ids != null){
-      task.assigned_to = JSON.parse(member_ids)
-    }
+      task.assigned_to = member_ids ? JSON.parse(member_ids): undefined
     await task.save()
     if (task.room) {
       createMessageAndSendToClient(
