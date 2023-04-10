@@ -53,7 +53,8 @@ const createTask = async (req, res) => {
     progress,
     note,
     heading,
-    room
+    room,
+    member_ids
   } = req.body
 
   if (!label) {
@@ -73,7 +74,8 @@ const createTask = async (req, res) => {
       status,
       priority,
       progress,
-      note
+      note,
+      assign_to: JSON.parse(member_ids)
     })
     if (room) {
       createMessageAndSendToClient(
@@ -103,7 +105,8 @@ const editTask = async (req, res) => {
     progress,
     note,
     heading,
-    room
+    room,
+    member_ids
   } = req.body
 
   if (!label) {
@@ -132,6 +135,7 @@ const editTask = async (req, res) => {
     task.heading = heading
     task.note = note
     task.room = room
+    task.assigned_to = JSON.parse(member_ids)
     await task.save()
     if (task.room) {
       createMessageAndSendToClient(
