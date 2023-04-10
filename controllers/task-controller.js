@@ -75,7 +75,7 @@ const createTask = async (req, res) => {
       priority,
       progress,
       note,
-      assign_to: JSON.parse(member_ids)
+      assigned_to: JSON.parse(member_ids)
     })
     if (room) {
       createMessageAndSendToClient(
