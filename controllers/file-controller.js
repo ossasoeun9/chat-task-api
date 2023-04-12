@@ -54,7 +54,7 @@ const getVoiceMessage = async (req, res) => {
 const mediaPath = path.join(process.cwd(), 'storage', 'media');
 
 const getMedia = async (req, res) => {
-    try {
+    // try {
         const filePath = path.join(mediaPath, req.url);
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
@@ -65,9 +65,9 @@ const getMedia = async (req, res) => {
             res.sendFile(filePath);
             // res.status(404).send('File not found');
         }
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+    // } catch (err) {
+    //     res.status(500).send(err.message);
+    // }
 }
 
 const filesPath = path.join(process.cwd(), 'storage', 'files');
