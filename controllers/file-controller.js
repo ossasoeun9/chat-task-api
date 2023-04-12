@@ -40,11 +40,12 @@ const voiceMessagesPath = path.join(process.cwd(), 'storage', 'voice-messages');
 const getVoiceMessage = async (req, res) => {
     try {
         const filePath = path.join(voiceMessagesPath, req.url);
-        if (fs.existsSync(filePath)) {
-            res.sendFile(filePath);
-        } else {
-            res.status(404).send('File not found');
-        }
+        return voiceMessagesPath;
+        // if (fs.existsSync(filePath)) {
+        //     res.sendFile(filePath);
+        // } else {
+        //     res.status(404).send('File not found');
+        // }
     } catch (err) {
         res.status(500).send(err.message);
     }
@@ -55,11 +56,11 @@ const mediaPath = path.join(process.cwd(), 'storage', 'media');
 const getMedia = async (req, res) => {
     try {
         const filePath = path.join(mediaPath, req.url);
-        if (fs.existsSync(filePath)) {
+        // if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
-        } else {
-            res.status(404).send('File not found');
-        }
+        // } else {
+        //     res.status(404).send('File not found');
+        // }
     } catch (err) {
         res.status(500).send(err.message);
     }
