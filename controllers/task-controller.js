@@ -20,6 +20,8 @@ const getTasks = (req, res) => {
   if (latest_timestamp) {
     Task.findWithDeleted(query)
       .populate("subtasks")
+      // .populate("owner")
+      // .populate("assigned_to")
       .populate("attachments")
       .sort({ created_at: -1 })
       .cursor()
@@ -28,6 +30,8 @@ const getTasks = (req, res) => {
   } else {
     Task.find(query)
       .populate("subtasks")
+      // .populate("owner")
+      // .populate("assigned_to")
       .populate("attachments")
       .sort({ created_at: -1 })
       .cursor()
@@ -49,7 +53,8 @@ const createTask = async (req, res) => {
     progress,
     note,
     heading,
-    room
+    room,
+    member_ids
   } = req.body
 
   if (!label) {
@@ -69,7 +74,8 @@ const createTask = async (req, res) => {
       status,
       priority,
       progress,
-      note
+      note,
+      assigned_to: member_ids ? JSON.parse(member_ids) : undefined,
     })
     if (room) {
       createMessageAndSendToClient(
@@ -99,7 +105,8 @@ const editTask = async (req, res) => {
     progress,
     note,
     heading,
-    room
+    room,
+    member_ids
   } = req.body
 
   if (!label) {
@@ -128,6 +135,7 @@ const editTask = async (req, res) => {
     task.heading = heading
     task.note = note
     task.room = room
+      task.assigned_to = member_ids ? JSON.parse(member_ids): undefined
     await task.save()
     if (task.room) {
       createMessageAndSendToClient(
@@ -321,7 +329,7 @@ const storeAttachment = async (filePath, taskId, userId) => {
   }
 
   const filename =
-    Date.now() + "." + randomBytes(6).toString("hex") + path.extname(filePath)
+    Date.now() + "_" + randomBytes(6).toString("hex") + path.extname(filePath)
 
   const fullPath = path.normalize(`${dir}/${filename}`)
 

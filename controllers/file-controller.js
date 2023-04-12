@@ -6,15 +6,15 @@ const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
 const getUserProfile = async (req, res) => {
     try {
         const filePath = path.join(userProfilePath, req.url);
-        res.body = {
-            'path': filePath,
-            'check': fs.existsSync(filePath)
-        }
-        // if (fs.existsSync(filePath)) {
-        //     res.sendFile(filePath);
-        // } else {
-        //     res.status(404).send('File not found');
+        // res.body = {
+        //     'path': filePath,
+        //     'check': fs.existsSync(filePath)
         // }
+        if (fs.existsSync(filePath)) {
+            res.sendFile(filePath);
+        } else {
+            res.status(404).send('File not found');
+        }
     } catch (err) {
         res.status(500).send(err.message);
     }

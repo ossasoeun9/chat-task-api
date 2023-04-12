@@ -67,7 +67,7 @@ const postMedia = async (req, res) => {
 
     const filename =
       Date.now() +
-      "." +
+      "_" +
       randomBytes(6).toString("hex") +
       path.extname(media.path)
 
