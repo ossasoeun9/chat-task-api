@@ -59,7 +59,10 @@ const getMedia = async (req, res) => {
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
-            res.sendFile("."+filePath);
+            const mediaPath = path.join(process.cwd(), './storage', 'media');
+            const filePath = path.join(mediaPath, req.url);
+
+            res.sendFile(filePath);
             // res.status(404).send('File not found');
         }
     } catch (err) {
