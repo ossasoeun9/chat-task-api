@@ -277,48 +277,44 @@ const verifyChangePhoneNumber = async (req, res) => {
 }
 
 const accountDeletion = async (req, res) => {
-  const { _id } = req.user
+  const { _id } = req.user;
 
-  // clear user personal information
-  User.findById(_id,  (err, user) => {
-    if (err) {
-      return res.status(500).send(err);
-    }
+  return res.status(202).send(_id);
+  const generateRandomString = () => {
+    return crypto.randomBytes(8).toString('hex');
+  };
+
+  try {
+    const user = await User.findById(_id);
 
     if (!user) {
       return res.status(404).send('User not found');
     }
 
-    const generateRandomString = () => {
-      return crypto.randomBytes(8).toString('hex');
-    };
-
-    // Update the user's data to reflect account deletion
     user.fullname = 'Deleted Account';
     user.first_name = null;
     user.last_name = null;
-    user.username = generateRandomString;
-    user.phone_number = generateRandomString;
+    user.username = generateRandomString();
+    user.phone_number = generateRandomString();
     user.bio = null;
     user.is_online = false;
 
-    if (user.profile_url != null) {
-      if (!fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
-        fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`)
+    if (user.profile_url) {
+      if (fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
+        fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`, (err) => {
+          if (err) {
+            return res.status(500).send(err);
+          }
+        });
       }
+      user.profile_url = null;
     }
-    user.profile_url = null;
 
+    await user.save();
 
-
-    // Save the updated user data
-    user.save((err, updatedUser) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
-
-    });
-  });
+  } catch (err) {
+    return res.status(500).send(err);
+  }
 
   // clear device log
   try {
@@ -340,7 +336,7 @@ const accountDeletion = async (req, res) => {
         { headers: { Authorization: `Basic ${oneSignalRestApiKey}` } }
     );
 
-    console.log(`Removed player IDs from OneSignal for user ${userId}: ${response.data.id}`);
+    console.log(`Removed player IDs from OneSignal for user ${_id}: ${response.data.id}`);
   } catch (err) {
     console.error(err);
   }
@@ -354,7 +350,7 @@ const accountDeletion = async (req, res) => {
   }
 
 
-  return res.status(200).send('User account deleted');
+  return res.status(200).send('User account deleted successfully');
 }
 
 export {
