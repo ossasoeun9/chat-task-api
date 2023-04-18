@@ -9,6 +9,7 @@ import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
 import axios from "axios";
+import Contact from "../models/contact-model.js";
 const DeviceLogIn = require('../models/device-login-model.js');
 
 dotenv.config()
@@ -340,6 +341,14 @@ const accountDeletion = async (req, res) => {
     );
 
     console.log(`Removed player IDs from OneSignal for user ${userId}: ${response.data.id}`);
+  } catch (err) {
+    console.error(err);
+  }
+
+  // clear contact list
+  try {
+    const result = await Contact.deleteMany({ owner: _id });
+    console.log(`${result.deletedCount} contacts deleted for owner ${_id}`);
   } catch (err) {
     console.error(err);
   }
