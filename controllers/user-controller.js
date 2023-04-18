@@ -9,7 +9,7 @@ import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
 import axios from "axios";
-import Contact from "../models/contact-model.js";
+const Contact = require('../models/contact-model.js');
 const DeviceLogIn = require('../models/device-login-model.js');
 
 dotenv.config()
