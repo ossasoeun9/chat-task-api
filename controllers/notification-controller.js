@@ -63,8 +63,9 @@ const sendNotification = async (messageId) => {
 
     message.sender = message.sender._id
     message.room = message.room._id
+    const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;
     var body = {
-      app_id: "a53c563b-5533-4f3c-86df-91b2d0067d54",
+      app_id: oneSignalAppId,
       contents: { en: content },
       headings: {
         en: heading

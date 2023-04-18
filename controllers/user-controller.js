@@ -8,6 +8,8 @@ import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
+import axios from "axios";
+const DeviceLogIn = require('../models/device-login-model.js');
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -273,6 +275,79 @@ const verifyChangePhoneNumber = async (req, res) => {
     })
 }
 
+const accountDeletion = async (req, res) => {
+  const { _id } = req.user
+
+  // clear user personal information
+  User.findById(_id,  (err, user) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    const generateRandomString = () => {
+      return crypto.randomBytes(8).toString('hex');
+    };
+
+    // Update the user's data to reflect account deletion
+    user.fullname = 'Deleted Account';
+    user.first_name = null;
+    user.last_name = null;
+    user.username = generateRandomString;
+    user.phone_number = generateRandomString;
+    user.bio = null;
+    user.is_online = false;
+
+    if (user.profile_url != null) {
+      if (!fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
+        fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`)
+      }
+    }
+    user.profile_url = null;
+
+
+
+    // Save the updated user data
+    user.save((err, updatedUser) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+    });
+  });
+
+  // clear device log
+  try {
+    const result = await DeviceLogIn.deleteMany({user: _id});
+    console.log(`${result.deletedCount} device loggins deleted for user ${_id}`);
+  } catch (err) {
+    console.error(err);
+  }
+
+  // clear notifications
+  try {
+    const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;
+    const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
+    const oneSignalApi = process.env.ONE_SIGNAL_API;
+
+    const response = await axios.put(
+        `${oneSignalApi}/players/${_id}`,
+        { app_id: oneSignalAppId, identifier: '' },
+        { headers: { Authorization: `Basic ${oneSignalRestApiKey}` } }
+    );
+
+    console.log(`Removed player IDs from OneSignal for user ${userId}: ${response.data.id}`);
+  } catch (err) {
+    console.error(err);
+  }
+
+
+  return res.status(200).send('User account deleted');
+}
+
 export {
   getUsers,
   getProfile,
@@ -282,5 +357,6 @@ export {
   removeProfilePicure,
   requestChangePhoneNumber,
   changeUsername,
-  verifyChangePhoneNumber
+  verifyChangePhoneNumber,
+  accountDeletion
 }
