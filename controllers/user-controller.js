@@ -279,7 +279,6 @@ const verifyChangePhoneNumber = async (req, res) => {
 const accountDeletion = async (req, res) => {
   const { _id } = req.user;
 
-  return res.status(202).send(_id);
   const generateRandomString = () => {
     return crypto.randomBytes(8).toString('hex');
   };
