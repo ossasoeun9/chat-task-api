@@ -290,14 +290,6 @@ const accountDeletion = async (req, res) => {
       return res.status(404).send('User not found');
     }
 
-    user.fullname = 'Deleted Account';
-    user.first_name = null;
-    user.last_name = null;
-    user.username = generateRandomString();
-    user.phone_number = generateRandomString();
-    user.bio = null;
-    user.is_online = false;
-
     if (user.profile_url) {
       if (fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
         fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`, (err) => {
@@ -305,11 +297,20 @@ const accountDeletion = async (req, res) => {
             return res.status(500).send(err);
           }
         });
-      }
-      user.profile_url = null;
-    }
+      }}
 
-    await user.save();
+    await User.updateOne(
+        { _id },
+        {
+          first_name: "Deleted",
+          last_name: "Account",
+          username: generateRandomString(),
+          phone_number: generateRandomString(),
+          bio: null,
+          is_online: false,
+          profile_url: null,
+        }
+    )
 
   } catch (err) {
     return res.status(500).send(err);
