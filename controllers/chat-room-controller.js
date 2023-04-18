@@ -121,6 +121,16 @@ const ceateTwoPeopleRoom = async (req, res) => {
     .select("-members")
     .populate([
       {
+        path: "people",
+        select:
+          "_id first_name last_name username profile_url is_online phone_number",
+        populate: {
+          path: "contact",
+          select: "-created_at -updated_at",
+          match: { owner: { $eq: _id } }
+        }
+      },
+      {
         path: "latest_message",
         match: { deleted_by: { $nin: [sender] } }
       },
@@ -157,6 +167,16 @@ const ceateTwoPeopleRoom = async (req, res) => {
       text: `@${user.username} strated message`
     })
     const room2 = await ChatRoom.findById(room._id).populate([
+      {
+        path: "people",
+        select:
+          "_id first_name last_name username profile_url is_online phone_number",
+        populate: {
+          path: "contact",
+          select: "-created_at -updated_at",
+          match: { owner: { $eq: _id } }
+        }
+      },
       {
         path: "latest_message",
         match: { deleted_by: { $nin: [sender] } }
