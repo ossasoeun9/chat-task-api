@@ -349,7 +349,9 @@ const accountDeletion = async (req, res) => {
   // need clear all access token
 
 
-  return res.status(200).send('User account deleted successfully');
+  return res.status(200).json({
+    message: "User account deleted successfully"
+  });
 }
 
 export {

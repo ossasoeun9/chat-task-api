@@ -6,8 +6,8 @@ dotenv.config()
 
 let user
 
-const verifyToken = (req, res, next) => {
-  var token = req.headers["authorization"]
+const verifyToken = async (req, res, next) => {
+  let token = req.headers["authorization"];
 
   if (!token)
     return res.status(401).json({
@@ -18,24 +18,21 @@ const verifyToken = (req, res, next) => {
     token = token.replace('Bearer ', '')
   }
 
-  return jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY, async (err, data) => {
-    if (err)
-      return res.status(401).json({
-        message: "Unauthenticated"
-      })
-
-    // check token when user deleted account
-    user = await User.findById(data.user._id);
-    req.user = user
+  try {
+    const data = jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY);
+    const user = await User.findById(data.user._id);
+    req.user = user;
     if (user.is_delete === true) {
       return res.status(401).json({
         message: "Unauthenticated"
-      })
-    } else {
-      return next()
+      });
     }
-
-  })
+    next();
+  } catch (err) {
+    return res.status(401).json({
+      message: "Unauthenticated"
+    });
+  }
 }
 
 export { verifyToken, user }
