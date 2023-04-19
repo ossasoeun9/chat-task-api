@@ -44,6 +44,10 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    is_delete: {
+      type: Boolean,
+      default: false,
+    },
     rooms: [{ type: mongoose.Types.ObjectId, ref: "Chat Room" }],
   },
   {

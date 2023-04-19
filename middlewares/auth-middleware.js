@@ -1,5 +1,6 @@
 import dotenv from "dotenv"
 import jsonwebtoken from "jsonwebtoken"
+import User from "../models/user-model.js";
 
 dotenv.config()
 
@@ -17,15 +18,23 @@ const verifyToken = (req, res, next) => {
     token = token.replace('Bearer ', '')
   }
 
-  return jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY, (err, data) => {
+  return jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY, async (err, data) => {
     if (err)
       return res.status(401).json({
         message: "Unauthenticated"
       })
 
-    user = data.user
-    req.user = data.user
-    return next()
+    // check token when user deleted account
+    user = await User.findById(data.user._id);
+    req.user = user
+    if (user.is_delete === true) {
+      return res.status(401).json({
+        message: "Unauthenticated"
+      })
+    } else {
+      return next()
+    }
+
   })
 }
 

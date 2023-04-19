@@ -44,20 +44,15 @@ app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
 
 
-// app.use("/user-profile", express.static("storage/user-profile"))
-app.use('/user-profile', getUserProfile);
+app.use("/user-profile", getUserProfile);
 
-// app.use("/group-profile", express.static("storage/group-profile"))
-app.use('/group-profile', getGroupProfile);
+app.use("/group-profile", getGroupProfile);
 
-// app.use("/voice-messages", express.static("storage/voice-messages"))
-app.use('/voice-messages', getVoiceMessage);
+app.use("/voice-messages", getVoiceMessage);
 
-// app.use("/media", express.static("storage/media"))
-app.use('/media', getMedia);
+app.use("/media", getMedia);
 
-// app.use("/files", express.static("storage/files"))
-app.use('/files', getFile);
+app.use("/files", getFile);
 
 // Protected route
 app.use(verifyToken)

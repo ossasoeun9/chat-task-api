@@ -280,7 +280,7 @@ const accountDeletion = async (req, res) => {
   const { _id } = req.user;
 
   const generateRandomString = () => {
-    return crypto.randomBytes(8).toString('hex');
+    return randomBytes(16);
   };
 
   try {
@@ -290,7 +290,7 @@ const accountDeletion = async (req, res) => {
       return res.status(404).send('User not found');
     }
 
-    if (user.profile_url) {
+    if (user.profile_url != null) {
       if (fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
         fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`, (err) => {
           if (err) {
@@ -309,6 +309,7 @@ const accountDeletion = async (req, res) => {
           bio: null,
           is_online: false,
           profile_url: null,
+          is_delete: true
         }
     )
 
@@ -319,7 +320,6 @@ const accountDeletion = async (req, res) => {
   // clear device log
   try {
     const result = await DeviceLogIn.deleteMany({user: _id});
-    console.log(`${result.deletedCount} device loggins deleted for user ${_id}`);
   } catch (err) {
     console.error(err);
   }
@@ -335,8 +335,6 @@ const accountDeletion = async (req, res) => {
         { app_id: oneSignalAppId, identifier: '' },
         { headers: { Authorization: `Basic ${oneSignalRestApiKey}` } }
     );
-
-    console.log(`Removed player IDs from OneSignal for user ${_id}: ${response.data.id}`);
   } catch (err) {
     console.error(err);
   }
@@ -344,10 +342,11 @@ const accountDeletion = async (req, res) => {
   // clear contact list
   try {
     const result = await Contact.deleteMany({ owner: _id });
-    console.log(`${result.deletedCount} contacts deleted for owner ${_id}`);
   } catch (err) {
     console.error(err);
   }
+
+  // need clear all access token
 
 
   return res.status(200).send('User account deleted successfully');
