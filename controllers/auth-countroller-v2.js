@@ -160,6 +160,12 @@ const refreshToken = async (req, res) => {
         message: "Unauthenticated"
       })
 
+    if (user.is_delete === true) {
+      return res.status(401).json({
+        message: "Unauthenticated"
+      });
+    }
+
     const accessToken = generateAccessToken(user, "7d")
     const refreshToken = generateRefreshToken(user, "30d")
 
