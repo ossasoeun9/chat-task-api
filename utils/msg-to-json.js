@@ -44,7 +44,7 @@ const msgToJson = (message, userId) => {
   }
 
   if (sender) {
-    const isMe = sender._id == userId
+    const isMe = sender == userId
 
     if (!isMe) {
       jsonMessage.sender = sender
