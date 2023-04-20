@@ -127,7 +127,7 @@ const ceateTwoPeopleRoom = async (req, res) => {
         populate: {
           path: "contact",
           select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
+          match: { owner: { $eq: sender._id } }
         }
       },
       {
@@ -174,7 +174,7 @@ const ceateTwoPeopleRoom = async (req, res) => {
         populate: {
           path: "contact",
           select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
+          match: { owner: { $eq: sender._id } }
         }
       },
       {
