@@ -91,18 +91,22 @@ const verifyOTP = async (req, res) => {
           username
         })
         newUser = await User.findById(newUser._id).populate("country")
-        const contacts = await Contact.find({phone_number: phoneNumber});
-        for(let i = 0; i < contacts.length; i++) {
+        const contacts = await Contact.find({ phone_number: phoneNumber })
+        for (let i = 0; i < contacts.length; i++) {
           var contact = contacts[i]
           var room = await ChatRoom.create({
             type: 2,
-            people: [newUser._id, contact.owner],
+            people: [newUser._id, contact.owner]
           })
+          await User.updateMany(
+            { _id: { $in: [newUser._id, contact.owner] } },
+            { $addToSet: { rooms: [room._id] } }
+          )
           await Message.create({
             type: 1,
             room: room._id,
             sender: newUser._id,
-            text: `@${newUser.username} joined ChatTask`,
+            text: `@${newUser.username} joined ChatTask`
           })
           sendToClient(newUser._id, room._id)
           sendToClient(contact.owner, room._id)
@@ -150,7 +154,7 @@ const refreshToken = async (req, res) => {
   jsonwebtoken.verify(refresh_token, refreshTokenKey, async (error, data) => {
     if (error)
       return res.status(401).json({
-        message: "Unauthenticated",
+        message: "Unauthenticated"
       })
 
     const user = await User.findById(data.user._id).populate("country")
@@ -163,7 +167,7 @@ const refreshToken = async (req, res) => {
     if (user.is_delete === true) {
       return res.status(401).json({
         message: "Unauthenticated"
-      });
+      })
     }
 
     const accessToken = generateAccessToken(user, "7d")
@@ -193,7 +197,9 @@ const refreshToken = async (req, res) => {
 
 const storeLogin = async (req, userId, token) => {
   const user = userId
-  const ip_address = req.headers["x-forwarded-for"] && req.headers["x-forwarded-for"].split(",")[0]
+  const ip_address =
+    req.headers["x-forwarded-for"] &&
+    req.headers["x-forwarded-for"].split(",")[0]
   const user_agent = req.headers["user-agent"]
   const oldDevice = await DeviceLogin.findOne({
     ip_address,
