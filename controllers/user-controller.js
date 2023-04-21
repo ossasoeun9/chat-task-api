@@ -8,7 +8,7 @@ import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
-import axios, {request} from "axios";
+import request from "axios";
 import Contact from "../models/contact-model.js";
 import DeviceLogIn  from "../models/device-login-model.js";
 
