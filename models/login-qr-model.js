@@ -1,5 +1,4 @@
 import mongoose from "mongoose"
-import User from "./user-model.js";
 import mongooseAutoPopulate from "mongoose-autopopulate";
 
 const loginQRCodeSchema = new mongoose.Schema(
@@ -27,5 +26,4 @@ loginQRCodeSchema.plugin(mongooseAutoPopulate)
 
 const LoginQRCode = mongoose.model('loginQRCode', loginQRCodeSchema);
 
-const LoginQR = await LoginQRCode.createCollection();
-export default LoginQR
+export default LoginQRCode

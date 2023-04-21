@@ -22,7 +22,7 @@ import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
 import { wsUserController } from "./controllers/ws-user-controller.js"
-// import { wsLoginQrController } from "./controllers/ws-login-qr-controller.js"
+import { wsLoginQrController } from "./controllers/ws-login-qr-controller.js"
 import {getFile, getGroupProfile, getMedia, getUserProfile, getVoiceMessage} from "./controllers/file-controller.js";
 
 dotenv.config()
@@ -51,7 +51,8 @@ app.use("/group-profile", getGroupProfile);
 app.use("/voice-messages", getVoiceMessage);
 app.use("/media", getMedia);
 app.use("/files", getFile);
-// app.ws("/login-qr", wsLoginQrController)
+app.ws("/login-qr", wsLoginQrController)
+
 
 // Protected route
 app.use(verifyToken)
@@ -69,6 +70,7 @@ app.use("/subtask", subtaskRoute)
 app.ws("/chats", wsController)
 app.ws("/message", wsMessageController)
 app.ws("/user", wsUserController)
+
 
 
 const port = process.env.PORT || 3000

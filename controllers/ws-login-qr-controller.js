@@ -1,5 +1,4 @@
-import User from "../models/user-model.js"
-import loginQrModel from "../models/login-qr-model.js";
+import LoginQr from "../models/login-qr-model.js";
 
 var clients = {}
 
@@ -8,7 +7,7 @@ const wsLoginQrController = async (ws, req) => {
     if (!clients[code] || !Array.isArray(clients[code])) {
         clients[code] = []
     }
-    const result = await loginQrModel.find({ code: code });
+    const result = await LoginQr.findOne({ code: code });
     if (!result) {
         // code was not found in the collection
         console.log('Code not found');
