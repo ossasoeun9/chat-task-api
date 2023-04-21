@@ -5,9 +5,11 @@ import os from "os"
 import { msgToJson } from "../utils/msg-to-json.js"
 
 const sendNotification = async (messageId) => {
+  const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
+
   var headers = {
     "Content-Type": "application/json; charset=utf-8",
-    Authorization: "Basic ZTY5YWY3MWItZTMzNi00ZDJiLWEyMTgtYjY0YTlmN2I1ZmRj"
+    Authorization: `Basic ${oneSignalRestApiKey}`
   }
 
   var options = {

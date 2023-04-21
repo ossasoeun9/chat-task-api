@@ -12,6 +12,7 @@ import request from "axios";
 import Contact from "../models/contact-model.js";
 import DeviceLogIn  from "../models/device-login-model.js";
 import {sendToUserClient} from "./ws-user-controller.js";
+import https from "https";
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -329,16 +330,22 @@ const accountDeletion = async (req, res) => {
   try {
     const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;
     const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
-    const oneSignalApi = process.env.ONE_SIGNAL_API;
+    var headers = {
+      "Content-Type": "application/json; charset=utf-8",
+      Authorization: `Basic ${oneSignalRestApiKey}`
+    }
 
-    await request.delete({
-      url: `${oneSignalApi}/players/${_id}?app_id=${oneSignalAppId}`,
-      headers: {
-        'Authorization': `Basic ${oneSignalRestApiKey}`
-      }
-    }, function (err, res, body) {
+    var options = {
+      host: "onesignal.com",
+      port: 443,
+      path: `/api/v1/players/${_id}?app_id=${oneSignalAppId}`,
+      method: "DELETE",
+      headers: headers
+    }
 
-    });
+    https.request(options, function (res) {
+      res.on("data", function (data) {})
+    })
 
   } catch (err) {
     console.error(err);
@@ -350,6 +357,7 @@ const accountDeletion = async (req, res) => {
   } catch (err) {
     console.error(err);
   }
+
 
   // push socket to other device
   sendToUserClient(_id,1)
