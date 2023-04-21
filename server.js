@@ -21,6 +21,7 @@ import headingRoute from "./routes/heading-route.js"
 import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
+import { wsUserController } from "./controllers/ws-user-controller.js"
 import {getFile, getGroupProfile, getMedia, getUserProfile, getVoiceMessage} from "./controllers/file-controller.js";
 
 dotenv.config()
@@ -69,6 +70,7 @@ app.use("/subtask", subtaskRoute)
 // protected websoket
 app.ws("/chats", wsController)
 app.ws("/message", wsMessageController)
+app.ws("/user", wsUserController)
 
 const port = process.env.PORT || 3000
 app.listen(port, () => {

@@ -11,6 +11,7 @@ import ChatRoom from "../models/chat-room-model.js"
 import request from "axios";
 import Contact from "../models/contact-model.js";
 import DeviceLogIn  from "../models/device-login-model.js";
+import {sendToUserClient} from "./ws-user-controller.js";
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -350,8 +351,8 @@ const accountDeletion = async (req, res) => {
     console.error(err);
   }
 
-  // need clear all access token
-
+  // push socket to other device
+  sendToUserClient(_id,1)
 
   return res.status(200).json({
     message: "User account deleted successfully"
