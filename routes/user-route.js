@@ -9,8 +9,8 @@ import {
   requestChangePhoneNumber,
   setProfilePicture,
   verifyChangePhoneNumber,
-  requestOTPInApp,
-  verifyOTPAccountDeletion
+  // requestOTPInApp,
+  // verifyOTPAccountDeletion
 } from "../controllers/user-controller.js"
 
 const router = express.Router()
