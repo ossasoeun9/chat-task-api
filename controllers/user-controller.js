@@ -13,10 +13,12 @@ import Contact from "../models/contact-model.js";
 import DeviceLogIn  from "../models/device-login-model.js";
 import {sendToUserClient} from "./ws-user-controller.js";
 import https from "https";
+import UserModel from "../models/user-model.js";
 
 dotenv.config()
+const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;
+const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
 const apiKey = process.env.API_KEY
-
 const googleIdentitytoolkit = identitytoolkit({ auth: apiKey, version: "v3" })
 
 const getUsers = async (req, res) => {
@@ -278,93 +280,144 @@ const verifyChangePhoneNumber = async (req, res) => {
     })
 }
 
-const accountDeletion = async (req, res) => {
+const requestOTPInApp = async (req, res) => {
   const { _id } = req.user;
+  const { recaptcha_token } = req.body
 
-  const generateRandomString = () => {
-    return randomBytes(16);
-  };
-
+  let country
+  let user
   try {
-    const user = await User.findById(_id);
-
-    if (!user) {
-      return res.status(404).send('User not found');
-    }
-
-    if (user.profile_url != null) {
-      if (fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
-        fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`, (err) => {
-          if (err) {
-            return res.status(500).send(err);
-          }
-        });
-      }}
-
-    await User.updateOne(
-        { _id },
-        {
-          first_name: "Deleted",
-          last_name: "Account",
-          username: generateRandomString(),
-          phone_number: generateRandomString(),
-          bio: null,
-          is_online: false,
-          profile_url: null,
-          is_delete: true
-        }
-    )
-
-  } catch (err) {
-    return res.status(500).send(err);
+    user = await User.findById(_id)
+    country = await Country.findById(user.country)
+  } catch (error) {
+    return res.status(400).json({ message: error })
   }
 
-  // clear device log
-  try {
-    const result = await DeviceLogIn.deleteMany({user: _id});
-  } catch (err) {
-    console.error(err);
-  }
+  const phoneNumber = country.dial_code + user.phone_number
 
-  // clear notifications
-  try {
-    const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;
-    const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
-    var headers = {
-      "Content-Type": "application/json; charset=utf-8",
-      Authorization: `Basic ${oneSignalRestApiKey}`
-    }
+  googleIdentitytoolkit.relyingparty
+      .sendVerificationCode({
+        recaptchaToken: recaptcha_token,
+        phoneNumber: phoneNumber
+      })
+      .then((response) => {
+        return res.json({
+          session_info: response.data.sessionInfo
+        })
+      })
+      .catch((error) => {
+        return res.status(500).json({ message: error.message })
+      })
+}
 
-    var options = {
-      host: "onesignal.com",
-      port: 443,
-      path: `/api/v1/players/${_id}?app_id=${oneSignalAppId}`,
-      method: "DELETE",
-      headers: headers
-    }
-
-    https.request(options, function (res) {
-      res.on("data", function (data) {})
+const verifyOTPAccountDeletion = async (req, res) => {
+  const { _id } = req.user;
+  const { session_info, otp_code } = req.body
+  if (!(session_info && otp_code)) {
+    return res.status(400).json({
+      message: "Session Inf, OTP and Country ID Code is required"
     })
-
-  } catch (err) {
-    console.error(err);
   }
 
-  // clear contact list
-  try {
-    const result = await Contact.deleteMany({ owner: _id });
-  } catch (err) {
-    console.error(err);
+  const user = await User.findById(_id);
+
+  if (!user) {
+    return res.status(404).send('User not found');
   }
 
+  googleIdentitytoolkit.relyingparty
+      .verifyPhoneNumber({
+        sessionInfo: session_info,
+        code: otp_code
+      })
+      .then(async (response) => {
 
-  // push socket to other device
-  sendToUserClient(_id,1)
+        // block start clear data for delete account
+        const generateRandomString = () => {
+          return randomBytes(16);
+        };
 
-  return res.status(200).json({
-    message: "User account deleted successfully"
-  });
+        try {
+
+          if (user.profile_url != null) {
+            if (fs.existsSync(`storage/user-profile/${_id}/${user.profile_url}`)) {
+              fs.unlinkSync(`storage/user-profile/${_id}/${user.profile_url}`, (err) => {
+                if (err) {
+                  return res.status(500).send(err);
+                }
+              });
+            }}
+
+          await User.updateOne(
+              { _id },
+              {
+                first_name: "Deleted",
+                last_name: "Account",
+                username: generateRandomString(),
+                phone_number: generateRandomString(),
+                bio: null,
+                is_online: false,
+                profile_url: null,
+                is_delete: true
+              }
+          )
+
+        } catch (err) {
+          return res.status(500).send(err);
+        }
+
+        // clear device log
+        try {
+          const result = await DeviceLogIn.deleteMany({user: _id});
+        } catch (err) {
+          console.error(err);
+        }
+
+        // clear notifications
+        try {
+
+          var headers = {
+            "Content-Type": "application/json; charset=utf-8",
+            Authorization: `Basic ${oneSignalRestApiKey}`
+          }
+
+          var options = {
+            host: "onesignal.com",
+            port: 443,
+            path: `/api/v1/players/${_id}?app_id=${oneSignalAppId}`,
+            method: "DELETE",
+            headers: headers
+          }
+
+          https.request(options, function (res) {
+            res.on("data", function (data) {})
+          })
+
+        } catch (err) {
+          console.error(err);
+        }
+
+        // clear contact list
+        try {
+          const result = await Contact.deleteMany({ owner: _id });
+        } catch (err) {
+          console.error(err);
+        }
+
+        // push socket to other device
+        sendToUserClient(_id,1)
+
+        return res.status(200).json({
+          message: "User account deleted successfully"
+        });
+
+      }).catch((error) => {
+    return res.status(500).json({ message: error.message })
+  })
+      .catch((error) => {
+        return res.status(500).json({ message: error })
+      })
+
 }
 
 export {
@@ -377,5 +430,6 @@ export {
   requestChangePhoneNumber,
   changeUsername,
   verifyChangePhoneNumber,
-  accountDeletion
+  requestOTPInApp,
+  verifyOTPAccountDeletion
 }

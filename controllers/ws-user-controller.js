@@ -28,8 +28,8 @@ const sendToUserClient = (client, action = 1) => {
           JSON.stringify({
             action,
             data: {
-              title: "accountDeletion",
-              message: "accountDeletionMessage"
+              title: "accountDeleted",
+              message: "accountDeletedMessage"
             }
           })
         )
