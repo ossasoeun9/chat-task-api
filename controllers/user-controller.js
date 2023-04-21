@@ -8,12 +8,10 @@ import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
-import request from "axios";
 import Contact from "../models/contact-model.js";
 import DeviceLogIn  from "../models/device-login-model.js";
 import {sendToUserClient} from "./ws-user-controller.js";
 import https from "https";
-import UserModel from "../models/user-model.js";
 
 dotenv.config()
 const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;

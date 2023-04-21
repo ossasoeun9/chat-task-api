@@ -51,7 +51,7 @@ app.use("/group-profile", getGroupProfile);
 app.use("/voice-messages", getVoiceMessage);
 app.use("/media", getMedia);
 app.use("/files", getFile);
-app.ws("/login-qr", wsLoginQrController)
+// app.ws("/login-qr", wsLoginQrController)
 
 // Protected route
 app.use(verifyToken)
