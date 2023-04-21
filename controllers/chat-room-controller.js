@@ -127,7 +127,7 @@ const ceateTwoPeopleRoom = async (req, res) => {
         populate: {
           path: "contact",
           select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
+          match: { owner: { $eq: sender._id } }
         }
       },
       {
@@ -174,7 +174,7 @@ const ceateTwoPeopleRoom = async (req, res) => {
         populate: {
           path: "contact",
           select: "-created_at -updated_at",
-          match: { owner: { $eq: _id } }
+          match: { owner: { $eq: sender._id } }
         }
       },
       {
@@ -397,10 +397,6 @@ const removeMembers = async (req, res) => {
       { _id: roomId },
       { $pullAll: { members: membersJson } }
     )
-    await User.updateMany(
-      { _id: { $in: membersJson } },
-      { $pullAll: { rooms: [roomId] } }
-    )
     const user = await User.findById(_id).select("username")
     const membersObject = await User.find({ _id: { $in: membersJson } }).select(
       "username"
@@ -494,7 +490,6 @@ const leaveChatRoom = async (req, res) => {
       { _id: roomId },
       { $pull: { members: { $in: [_id] } } }
     )
-    await User.updateOne({ _id: _id }, { $pullAll: { rooms: [roomId] } })
     sendMessageToClient(mes, roomId)
     sendToClient(_id, roomId, 3)
     const roomUpdated = await findAndSendToClient(roomId, _id, 2)

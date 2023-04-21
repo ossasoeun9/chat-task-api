@@ -44,7 +44,13 @@ const msgToJson = (message, userId) => {
   }
 
   if (sender) {
-    const isMe = sender._id == userId
+    let isMe;
+
+    if (`${sender}`.includes('{')) {
+      isMe = sender._id == userId
+    } else {
+      isMe = sender == userId
+    }
 
     if (!isMe) {
       jsonMessage.sender = sender

@@ -21,7 +21,7 @@ const verifyToken = async (req, res, next) => {
   try {
     const data = jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY);
     const user = await User.findById(data.user._id);
-    req.user = user;
+    req.user = JSON.parse(JSON.stringify(user));
     if (user.is_delete === true) {
       return res.status(401).json({
         message: "Unauthenticated"
