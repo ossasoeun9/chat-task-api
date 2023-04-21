@@ -8,7 +8,7 @@ import path from "path"
 import { identitytoolkit } from "@googleapis/identitytoolkit"
 import JSONStream from "JSONStream"
 import ChatRoom from "../models/chat-room-model.js"
-import axios from "axios";
+import axios, {request} from "axios";
 import Contact from "../models/contact-model.js";
 import DeviceLogIn  from "../models/device-login-model.js";
 
@@ -330,11 +330,15 @@ const accountDeletion = async (req, res) => {
     const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
     const oneSignalApi = process.env.ONE_SIGNAL_API;
 
-    const response = await axios.put(
-        `${oneSignalApi}/players/${_id}`,
-        { app_id: oneSignalAppId, identifier: '' },
-        { headers: { Authorization: `Basic ${oneSignalRestApiKey}` } }
-    );
+    request.delete({
+      url: `${oneSignalApi}/players/${_id}?app_id=${oneSignalAppId}`,
+      headers: {
+        'Authorization': `Basic ${oneSignalRestApiKey}`
+      }
+    }, function(err, res, body) {
+
+    });
+
   } catch (err) {
     console.error(err);
   }
