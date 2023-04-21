@@ -24,7 +24,7 @@ router.post("/request-change-phone-number", requestChangePhoneNumber)
 router.post("/verify-change-phone-number", verifyChangePhoneNumber)
 router.post("/set-profile-picture", setProfilePicture)
 router.delete("/remove-profile-picture", removeProfilePicure)
-router.get("/request-otp-in-app", requestOTPInApp)
-router.delete("/verify-otp-account-deletion", verifyOTPAccountDeletion)
+// router.get("/request-otp-in-app", requestOTPInApp)
+// router.delete("/verify-otp-account-deletion", verifyOTPAccountDeletion)
 
 export default router
