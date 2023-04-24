@@ -9,6 +9,7 @@ import Message from "../models/message-model.js"
 import { sendMessageToClient } from "./ws-message-controller.js"
 import User from "../models/user-model.js"
 import SubTask from "../models/sub-task-model.js"
+import { sendAnyNotification } from "./notification-controller.js"
 
 const getTasks = (req, res) => {
   const { latest_timestamp } = req.query
@@ -75,14 +76,17 @@ const createTask = async (req, res) => {
       priority,
       progress,
       note,
-      assigned_to: member_ids ? JSON.parse(member_ids) : undefined,
+      assigned_to: member_ids ? JSON.parse(member_ids) : undefined
     })
-    if (room) {
-      createMessageAndSendToClient(
-        _id,
-        `Task (${label}) was created`,
-        room,
-        task._id
+    if (member_ids) {
+      const user = req.user
+      sendAnyNotification(
+        JSON.parse(member_ids),
+        `Task - ${task.label}`,
+        `${
+          user.first_name ? user.first_name : `@${user.username}`
+        } assigned task to you`,
+        task
       )
     }
     return res.json(task)
@@ -135,14 +139,17 @@ const editTask = async (req, res) => {
     task.heading = heading
     task.note = note
     task.room = room
-      task.assigned_to = member_ids ? JSON.parse(member_ids): undefined
+    task.assigned_to = member_ids ? JSON.parse(member_ids) : undefined
     await task.save()
-    if (task.room) {
-      createMessageAndSendToClient(
-        _id,
-        `Task (${label}) was edited`,
-        task.room,
-        task._id
+    if (member_ids) {
+      const user = req.user
+      sendAnyNotification(
+        JSON.parse(member_ids),
+        `Task - ${task.label}`,
+        `${
+          user.first_name ? user.first_name : `@${user.username}`
+        } assigned task to you`,
+        task
       )
     }
     res.json(task)
@@ -173,20 +180,15 @@ const assignTaskTo = async (req, res) => {
     const updatedTask = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
-    if (updatedTask.room) {
-      const members = JSON.parse(member_ids)
-      for (let i = 0; i < members.length; i++) {
-        const user = await User.findById(members[i])
-        if (user) {
-          createMessageAndSendToClient(
-            _id,
-            `@${user.username} was assigned to Task (${task.label})`,
-            task.room,
-            id
-          )
-        }
-      }
-    }
+    const user = req.user
+    sendAnyNotification(
+      JSON.parse(member_ids),
+      `Task - ${updatedTask.label}`,
+      `${
+        user.first_name ? user.first_name : `@${user.username}`
+      } assigned task to you`,
+      updatedTask
+    )
     res.json(updatedTask)
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -215,20 +217,6 @@ const removeAssignTaskTo = async (req, res) => {
     const updatedTask = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
-    if (updatedTask.room) {
-      const members = JSON.parse(member_ids)
-      for (let i = 0; i < members.length; i++) {
-        const user = await User.findById(members[i])
-        if (user) {
-          createMessageAndSendToClient(
-            _id,
-            `@${user.username} was removed from Task (${updatedTask.label})`,
-            task.room,
-            id
-          )
-        }
-      }
-    }
     res.json(updatedTask)
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -248,14 +236,6 @@ const deleteTask = async (req, res) => {
     await Task.delete({ _id: req.params.id })
     await Attachment.deleteMany({ task: req.params.id })
     await SubTask.deleteMany({ parent: req.params.id })
-    if (task.room) {
-      createMessageAndSendToClient(
-        _id,
-        `Task (${task.label}) was deleted`,
-        task.room,
-        task._id
-      )
-    }
     return res.json({ message: "Delete successfully" })
   } catch (error) {
     return res.status(500).json({ message: error })
@@ -288,14 +268,6 @@ const addAttachment = async (req, res) => {
       const updatedData = await Task.findById(id)
         .populate("subtasks")
         .populate("attachments")
-      if (task.room) {
-        createMessageAndSendToClient(
-          _id,
-          `${resFiles.length} attachments was added to Task (${task.label})`,
-          task.room,
-          task._id
-        )
-      }
       return res.json(updatedData)
     } else {
       var resFile = await storeAttachment(attachments.path, id, _id)
@@ -304,14 +276,6 @@ const addAttachment = async (req, res) => {
       const updatedData = await Task.findById(id)
         .populate("subtasks")
         .populate("attachments")
-      if (task.room) {
-        createMessageAndSendToClient(
-          _id,
-          `An attachment was added to Task (${task.label})`,
-          task.room,
-          task._id
-        )
-      }
       return res.json(updatedData)
     }
   } catch (error) {
@@ -368,37 +332,10 @@ const deleteAttachment = async (req, res) => {
     const updatedData = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
-    if (task.room) {
-      const ids = JSON.parse(attachment_ids)
-      createMessageAndSendToClient(
-        _id,
-        `${
-          ids.length == 1 ? "An attachment" : `${ids.length} attachments`
-        } was removed from Task (${task.label})`,
-        task.room,
-        task._id
-      )
-    }
     return res.json(updatedData)
   } catch (error) {
     return res.status(500).json({ error })
   }
-}
-
-const createMessageAndSendToClient = (senderId, text, roomId, taskId) => {
-  Message.create({
-    type: 2,
-    text,
-    sender: senderId,
-    room: roomId,
-    task: taskId
-  })
-    .then(async (value) => {
-      sendMessageToClient(value, roomId)
-    })
-    .catch((error) => {
-      console.log(error)
-    })
 }
 
 export {
