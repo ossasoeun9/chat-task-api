@@ -198,12 +198,12 @@ const changeUsername = async (req, res) => {
   }
 }
 
-const requestChangePhoneNumber = async (req, res) => {
-  const { recaptcha_token, phone_number, country_id } = req.body
+const checkChangePhoneNumber = async (req, res) => {
+  const { phone_number, country_id } = req.body
 
-  if (!(recaptcha_token, phone_number && country_id))
+  if (!(phone_number && country_id))
     return res.status(400).json({
-      message: "Recaptcha token, Phone number and country id is required"
+      message: "Phone number and country id is required"
     })
 
   if (!containsOnlyNumbers(phone_number))
@@ -229,19 +229,9 @@ const requestChangePhoneNumber = async (req, res) => {
 
   const newPhoneNumber = country.dial_code + phone_number
 
-  googleIdentitytoolkit.relyingparty
-    .sendVerificationCode({
-      phoneNumber: newPhoneNumber,
-      recaptchaToken: recaptcha_token
-    })
-    .then((response) => {
-      return res.json({
-        session_info: response.data.sessionInfo
-      })
-    })
-    .catch((error) => {
-      return res.status(500).send(error)
-    })
+  return res.status(200).json({
+    message: `${newPhoneNumber} is available`
+  })
 }
 
 const verifyChangePhoneNumber = async (req, res) => {
@@ -278,42 +268,12 @@ const verifyChangePhoneNumber = async (req, res) => {
     })
 }
 
-const requestOTPInApp = async (req, res) => {
-  const { _id } = req.user;
-  const { recaptcha_token } = req.body
-
-  let country
-  let user
-  try {
-    user = await User.findById(_id)
-    country = await Country.findById(user.country)
-  } catch (error) {
-    return res.status(400).json({ message: error })
-  }
-
-  const phoneNumber = country.dial_code + user.phone_number
-
-  googleIdentitytoolkit.relyingparty
-      .sendVerificationCode({
-        recaptchaToken: recaptcha_token,
-        phoneNumber: phoneNumber
-      })
-      .then((response) => {
-        return res.json({
-          session_info: response.data.sessionInfo
-        })
-      })
-      .catch((error) => {
-        return res.status(500).json({ message: error.message })
-      })
-}
-
 const verifyOTPAccountDeletion = async (req, res) => {
   const { _id } = req.user;
   const { session_info, otp_code } = req.body
   if (!(session_info && otp_code)) {
     return res.status(400).json({
-      message: "Session Inf, OTP and Country ID Code is required"
+      message: "Session Inf0, OTP and Country ID Code is required"
     })
   }
 
@@ -425,9 +385,8 @@ export {
   editBio,
   setProfilePicture,
   removeProfilePicure,
-  requestChangePhoneNumber,
+  checkChangePhoneNumber,
   changeUsername,
   verifyChangePhoneNumber,
-  requestOTPInApp,
   verifyOTPAccountDeletion
 }
