@@ -5,7 +5,7 @@ import os from "os"
 import { msgToJson } from "../utils/msg-to-json.js"
 
 const sendNotification = async (messageId) => {
-  const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY;
+  const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY
 
   var headers = {
     "Content-Type": "application/json; charset=utf-8",
@@ -37,23 +37,23 @@ const sendNotification = async (messageId) => {
     }
 
     if (message.type == 3) {
-        content = "Fowarded a message"
+      content = "Fowarded a message"
     }
 
     if (message.type == 4) {
-        content = "Sent voice message"
+      content = "Sent voice message"
     }
 
     if (message.type == 5) {
-        content = "Sent media"
+      content = "Sent media"
     }
 
     if (message.type == 6) {
-        content = "Sent file"
+      content = "Sent file"
     }
 
     if (message.type == 7) {
-        content = "Sent url"
+      content = "Sent url"
     }
 
     let heading = message.sender.first_name
@@ -65,7 +65,7 @@ const sendNotification = async (messageId) => {
 
     message.sender = message.sender._id
     message.room = message.room._id
-    const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID;
+    const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID
     var body = {
       app_id: oneSignalAppId,
       contents: { en: content },
@@ -90,4 +90,43 @@ const sendNotification = async (messageId) => {
   })
 }
 
-export { sendNotification }
+const sendAnyNotification = async (userIds, heading, content, data) => {
+  const oneSignalRestApiKey = process.env.ONE_SIGNAL_REST_API_KEY
+
+  var headers = {
+    "Content-Type": "application/json; charset=utf-8",
+    Authorization: `Basic ${oneSignalRestApiKey}`
+  }
+
+  var options = {
+    host: "onesignal.com",
+    port: 443,
+    path: "/api/v1/notifications",
+    method: "POST",
+    headers: headers
+  }
+
+  const oneSignalAppId = process.env.ONE_SIGNAL_APP_ID
+  var body = {
+    app_id: oneSignalAppId,
+    contents: { en: content },
+    headings: { en: heading },
+    include_external_user_ids: userIds,
+    data: data
+  }
+
+  var req = https.request(options, function (res) {
+    res.on("data", function (data) {
+      console.log(data.toString())
+    })
+  })
+
+  req.on("error", function (e) {
+    console.log("ERROR:")
+    console.log(e)
+  })
+
+  req.write(JSON.stringify(body))
+  req.end()
+}
+export { sendNotification, sendAnyNotification }
