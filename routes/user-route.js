@@ -6,7 +6,7 @@ import {
   getProfile,
   getUsers,
   removeProfilePicure,
-  requestChangePhoneNumber,
+  checkChangePhoneNumber,
   setProfilePicture,
   verifyChangePhoneNumber,
   verifyOTPAccountDeletion
