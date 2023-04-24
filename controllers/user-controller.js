@@ -199,6 +199,7 @@ const changeUsername = async (req, res) => {
 }
 
 const checkChangePhoneNumber = async (req, res) => {
+  const { _id } = req.user
   const { phone_number, country_id } = req.body
 
   if (!(phone_number && country_id))
@@ -213,7 +214,8 @@ const checkChangePhoneNumber = async (req, res) => {
 
   const getCountry = await Country.findById(country_id)
   const otherUser = await User.find({
-    phone_number: getCountry.dial_code + phone_number
+    phone_number: getCountry.dial_code + phone_number,
+    _id: { $ne: _id }
   })
   if (otherUser.length > 0)
     return res.status(400).json({
