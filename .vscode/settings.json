@@ -1,5 +1,25 @@
 {
     "cSpell.words": [
         "virtuals"
-    ]
+    ],
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#61c7c0",
+        "activityBar.background": "#61c7c0",
+        "activityBar.foreground": "#15202b",
+        "activityBar.inactiveForeground": "#15202b99",
+        "activityBarBadge.background": "#b443bc",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#15202b99",
+        "sash.hoverBorder": "#61c7c0",
+        "statusBar.background": "#40b5ad",
+        "statusBar.foreground": "#15202b",
+        "statusBarItem.hoverBackground": "#338f89",
+        "statusBarItem.remoteBackground": "#40b5ad",
+        "statusBarItem.remoteForeground": "#15202b",
+        "titleBar.activeBackground": "#40b5ad",
+        "titleBar.activeForeground": "#15202b",
+        "titleBar.inactiveBackground": "#40b5ad99",
+        "titleBar.inactiveForeground": "#15202b99"
+    },
+    "peacock.color": "40B5AD"
 }
