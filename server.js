@@ -10,6 +10,7 @@ import { verifyToken } from "./middlewares/auth-middleware.js"
 import phoneCodeRoute from "./routes/country-route.js"
 import userRoute from "./routes/user-route.js"
 import authRoute from "./routes/auth-route.js"
+import authQRRoute from "./routes/auth-qr-route.js"
 import deviceRoute from "./routes/device-route.js"
 import contactRoute from "./routes/contact-route.js"
 import chatRoomRoute from "./routes/chat-room-route.js"
@@ -22,7 +23,7 @@ import expressWs from "express-ws"
 import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
 import { wsUserController } from "./controllers/ws-user-controller.js"
-// import { wsLoginQrController } from "./controllers/ws-login-qr-controller.js"
+import { wsLoginQrController } from "./controllers/ws-login-qr-controller.js"
 import {getFile, getGroupProfile, getMedia, getUserProfile, getVoiceMessage} from "./controllers/file-controller.js";
 
 dotenv.config()
@@ -44,13 +45,14 @@ app.use(formData.parse(options))
 
 app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
+app.use("/auth-qr", authQRRoute)
 
 app.use("/user-profile", getUserProfile);
 app.use("/group-profile", getGroupProfile);
 app.use("/voice-messages", getVoiceMessage);
 app.use("/media", getMedia);
 app.use("/files", getFile);
-// app.ws("/login-qr", wsLoginQrController)
+app.ws("/login-qr", wsLoginQrController)
 
 // Protected route
 app.use(verifyToken)
