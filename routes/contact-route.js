@@ -12,7 +12,7 @@ import {
 const router = express.Router()
 
 router.get("/", getContacts)
-router.get("/scan-qr-code", scanQR)
+router.post("/scan-qr-code", scanQR)
 router.get("/:id", getContactDetail)
 router.post("/create-or-edit", createOrEditContact)
 router.post("/sync", syncContacts)
