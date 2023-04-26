@@ -1,5 +1,6 @@
 import JSONStream from "JSONStream"
 import Contact from "../models/contact-model.js"
+import User from "../models/user-model.js"
 
 const hideContactFiled = "-owner -is_blocked -created_at -updated_at"
 const hideUserFiled = "-created_at -country"
@@ -71,6 +72,39 @@ const createOrEditContact = async (req, res) => {
       phone_number,
       first_name,
       last_name,
+      owner: _id
+    })
+    contact = await Contact.findById({ _id: contact._id }).populate("user")
+    return res.json(contact)
+  } catch (error) {
+    return res.status(500).json({
+      message: error
+    })
+  }
+}
+
+const scanQR = async (req, res) => {
+  const { _id } = req.user
+  const { username } = req.body
+  if (!username) {
+    return res.status(400).json({
+      message: "QR Code is required"
+    })
+  }
+
+  const user = await User.findOne({ username: username })
+
+  if (user == null) {
+    return res.status(400).json({
+      message: "User Not Found"
+    })
+  }
+
+  try {
+    let contact = await Contact.create({
+      phone_number: user.phone_number,
+      first_name: user.first_name,
+      last_name: user.last_name,
       owner: _id
     })
     contact = await Contact.findById({ _id: contact._id }).populate("user")
@@ -174,5 +208,6 @@ export {
   createOrEditContact,
   syncContacts,
   deleteContact,
-  blockContact
+  blockContact,
+  scanQR
 }

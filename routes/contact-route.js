@@ -5,12 +5,14 @@ import {
   deleteContact,
   getContactDetail,
   getContacts,
-  syncContacts
+  syncContacts,
+  scanQR
 } from "../controllers/contact-controller.js"
 
 const router = express.Router()
 
 router.get("/", getContacts)
+router.get("/scan-qr-code", scanQR)
 router.get("/:id", getContactDetail)
 router.post("/create-or-edit", createOrEditContact)
 router.post("/sync", syncContacts)
