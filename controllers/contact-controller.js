@@ -100,6 +100,15 @@ const scanQR = async (req, res) => {
     })
   }
 
+  const oldContact = await Contact.findOne({
+    owner: _id,
+    phone_number: user.phone_number
+  }).populate("user")
+
+  if (oldContact) {
+    return res.json(oldContact)
+  }
+
   try {
     let contact = await Contact.create({
       phone_number: user.phone_number,
