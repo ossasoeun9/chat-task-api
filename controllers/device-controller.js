@@ -30,13 +30,13 @@ const terminateDevice = async (req, res) => {
     _id
   })
 
-  const device = await DeviceLogin.findById({ _id: id })
-
-  if(device._id == currentDevice._id){
+  if(id == currentDevice._id){
     return res.status(400).json({
       message: "Unable Terminal Your Current Device"
     })
   }
+
+  const device = await DeviceLogin.findById({ _id: id })
 
   if(device == null){
     return res.status(400).json({
