@@ -16,6 +16,41 @@ const getDeviceLogin = async (req, res) => {
   }
 }
 
+const terminateDevice = async (req, res) => {
+  const { _id } = req.user
+  const id = req.params.id;
+
+  const ip_address =
+    req.headers["x-forwarded-for"] &&
+    req.headers["x-forwarded-for"].split(",")[0]
+  const user_agent = req.headers["user-agent"]
+  const currentDevice = await DeviceLogin.findOne({
+    ip_address,
+    user_agent,
+    _id
+  })
+
+  const device = await DeviceLogin.findById({ _id: id })
+
+  if(device._id == currentDevice._id){
+    return res.status(400).json({
+      message: "Unable Terminal Your Current Device"
+    })
+  }
+
+  if(device == null){
+    return res.status(400).json({
+      message: "Device Not Found"
+    })
+  }
+
+  await DeviceLogin.deleteOne({ _id: id });
+
+  return res.status(200).json({
+    message: "Device was terminate successful"
+  })
+}
+
 const scanLogin = async (req, res) => {
   const { _id } = req.user
   const { id } = req.body
@@ -59,7 +94,7 @@ const scanLogin = async (req, res) => {
       // The document was deleted successfully
     }
   });
-  
+
   return res.status(200).json({
     message: "Login Successful"
   })
@@ -77,4 +112,4 @@ const generateRefreshToken = (user, expiresIn) => {
   })
 }
 
-export { getDeviceLogin, scanLogin }
+export { getDeviceLogin, terminateDevice, scanLogin }
