@@ -30,7 +30,7 @@ const terminateDevice = async (req, res) => {
     _id
   })
 
-  if(id == currentDevice._id){
+  if(currentDevice && id === currentDevice._id.toString()){
     return res.status(400).json({
       message: "Unable Terminal Your Current Device"
     })
