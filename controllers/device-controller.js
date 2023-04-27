@@ -51,6 +51,15 @@ const scanLogin = async (req, res) => {
     expires_in: expDate
   })
 
+  // Delete the LoginQRCode document
+  LoginQRCode.deleteOne({ _id: id }, (err) => {
+    if (err) {
+      // Handle the error
+    } else {
+      // The document was deleted successfully
+    }
+  });
+  
   return res.status(200).json({
     message: "Login Successful"
   })

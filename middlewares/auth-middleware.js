@@ -22,11 +22,18 @@ const verifyToken = async (req, res, next) => {
     const data = jsonwebtoken.verify(token, process.env.ACCESS_TOKEN_KEY);
     const user = await User.findById(data.user._id);
     req.user = JSON.parse(JSON.stringify(user));
+
+    // check user deleted account or not
     if (user.is_delete === true) {
       return res.status(401).json({
         message: "Unauthenticated"
       });
     }
+
+    // check token exist in devices list or not, if not reject access
+
+
+    // everything good, can access now
     next();
   } catch (err) {
     return res.status(401).json({

@@ -164,12 +164,19 @@ const refreshToken = async (req, res) => {
         message: "Unauthenticated"
       })
 
+      // check user deleted account or not
     if (user.is_delete === true) {
       return res.status(401).json({
         message: "Unauthenticated"
       })
     }
 
+    // check refresh_token existing in devices list or not, if not reject access
+
+
+    
+
+    // everything look good, user can access
     const accessToken = generateAccessToken(user, "7d")
     const refreshToken = generateRefreshToken(user, "30d")
 
