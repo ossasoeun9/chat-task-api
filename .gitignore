@@ -2,6 +2,7 @@
 /node_modules
 
 !/storage/default.png
+!/storage/patterns/
 /storage
 .idea
 /.vscode/
