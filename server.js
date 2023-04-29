@@ -47,6 +47,7 @@ app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)
 app.use("/auth-qr", authQRRoute)
 
+app.use("/patterns", getPattern);
 app.use("/user-profile", getUserProfile);
 app.use("/group-profile", getGroupProfile);
 app.use("/voice-messages", getVoiceMessage);

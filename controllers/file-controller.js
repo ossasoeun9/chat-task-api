@@ -1,15 +1,27 @@
 import path from "path";
 import fs from "fs";
 
+const patternPath = path.join(process.cwd(), 'storage', 'patterns');
+
+const getPattern = async (req, res) => {
+    try {
+        const filePath = path.join(patternPath, req.url);
+        if (fs.existsSync(filePath)) {
+            res.sendFile(filePath);
+        } else {
+            res.status(404).send('File not found');
+        }
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+}
+
 const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
+
 
 const getUserProfile = async (req, res) => {
     try {
         const filePath = path.join(userProfilePath, req.url);
-        // res.body = {
-        //     'path': filePath,
-        //     'check': fs.existsSync(filePath)
-        // }
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
@@ -40,7 +52,6 @@ const voiceMessagesPath = path.join(process.cwd(), 'storage', 'voice-messages');
 const getVoiceMessage = async (req, res) => {
     try {
         const filePath = path.join(voiceMessagesPath, req.url);
-        // return voiceMessagesPath;
         if (fs.existsSync(filePath)) {
             res.sendFile(filePath);
         } else {
@@ -81,4 +92,5 @@ const getFile = async (req, res) => {
     }
 }
 
-export { getUserProfile,getGroupProfile, getFile,getMedia,getVoiceMessage }
+export { getPattern, getUserProfile,getGroupProfile, getFile,getMedia,
+getVoiceMessage }
