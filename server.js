@@ -41,7 +41,7 @@ expressWs(app)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-app.use(formData.parse(options))
+app.use(formData.parse(options))  
 
 app.use("/country", phoneCodeRoute)
 app.use("/auth", authRoute)

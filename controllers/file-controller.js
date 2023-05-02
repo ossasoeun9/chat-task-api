@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 
-const patternPath = path.join(process.cwd(), 'storage', 'patterns');
+const patternPath = path.join(process.cwd(), 'asset-data', 'patterns');
 
 const getPattern = async (req, res) => {
     try {
@@ -17,7 +17,6 @@ const getPattern = async (req, res) => {
 }
 
 const userProfilePath = path.join(process.cwd(), 'storage', 'user-profile');
-
 
 const getUserProfile = async (req, res) => {
     try {
