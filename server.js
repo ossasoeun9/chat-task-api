@@ -24,7 +24,7 @@ import { wsController } from "./controllers/ws-chats-controller.js"
 import { wsMessageController } from "./controllers/ws-message-controller.js"
 import { wsUserController } from "./controllers/ws-user-controller.js"
 import { wsLoginQrController } from "./controllers/ws-login-qr-controller.js"
-import {getFile, getGroupProfile, getMedia, getUserProfile, getVoiceMessage} from "./controllers/file-controller.js";
+import {getFile,getPattern, getGroupProfile, getMedia, getUserProfile, getVoiceMessage} from "./controllers/file-controller.js";
 
 dotenv.config()
 connectDB()
