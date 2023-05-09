@@ -12,10 +12,12 @@ import Message from "../models/message-model.js"
 import User from "../models/user-model.js"
 import {
   generateAccessToken,
-  generateRefreshToken
+  generateRefreshToken,
 } from "../utils/token-generator.js"
 import { containsOnlyNumbers } from "../utils/validator.js"
 import { sendToClient } from "./ws-chats-controller.js"
+import { response } from "express"
+import RevokedToken from "../models/revoked_token.js"
 
 dotenv.config()
 const apiKey = process.env.API_KEY
@@ -29,13 +31,13 @@ const requestOTP = async (req, res) => {
 
   if (!(recaptcha_token && phone_number && country_id)) {
     return res.status(400).json({
-      message: "Recaptcha token, Phone number and country id is required"
+      message: "Recaptcha token, Phone number and country id is required",
     })
   }
 
   if (!containsOnlyNumbers(phone_number)) {
     return res.status(400).json({
-      message: "Phone number must be number"
+      message: "Phone number must be number",
     })
   }
 
@@ -51,11 +53,11 @@ const requestOTP = async (req, res) => {
   googleIdentitytoolkit.relyingparty
     .sendVerificationCode({
       recaptchaToken: recaptcha_token,
-      phoneNumber: newPhoneNumber
+      phoneNumber: newPhoneNumber,
     })
     .then((response) => {
       return res.json({
-        session_info: response.data.sessionInfo
+        session_info: response.data.sessionInfo,
       })
     })
     .catch((error) => {
@@ -67,19 +69,19 @@ const verifyOTP = async (req, res) => {
   const { session_info, otp_code, country_id } = req.body
   if (!(session_info && otp_code && country_id)) {
     return res.status(400).json({
-      message: "Session Inf, OTP and Country ID Code is required"
+      message: "Session Inf, OTP and Country ID Code is required",
     })
   }
 
   googleIdentitytoolkit.relyingparty
     .verifyPhoneNumber({
       sessionInfo: session_info,
-      code: otp_code
+      code: otp_code,
     })
     .then(async (response) => {
       const { phoneNumber } = response.data
       const user = await User.findOne({
-        phone_number: phoneNumber
+        phone_number: phoneNumber,
       }).populate("country")
 
       let newUser
@@ -88,7 +90,7 @@ const verifyOTP = async (req, res) => {
         newUser = await User.create({
           phone_number: phoneNumber,
           country: country_id,
-          username
+          username,
         })
         newUser = await User.findById(newUser._id).populate("country")
         const contacts = await Contact.find({ phone_number: phoneNumber })
@@ -96,7 +98,7 @@ const verifyOTP = async (req, res) => {
           var contact = contacts[i]
           var room = await ChatRoom.create({
             type: 2,
-            people: [newUser._id, contact.owner]
+            people: [newUser._id, contact.owner],
           })
           await User.updateMany(
             { _id: { $in: [newUser._id, contact.owner] } },
@@ -106,7 +108,7 @@ const verifyOTP = async (req, res) => {
             type: 1,
             room: room._id,
             sender: newUser._id,
-            text: `@${newUser.username} joined ChatTask`
+            text: `@${newUser.username} joined ChatTask`,
           })
           sendToClient(newUser._id, room._id)
           sendToClient(contact.owner, room._id)
@@ -121,19 +123,18 @@ const verifyOTP = async (req, res) => {
 
       const { id } = user || newUser
 
-      await storeLogin(req, id, {
+      const deviceLogin = await storeLogin(req, id, {
         access_token: accessToken,
         refresh_token: refreshToken,
-        token_type: "Bearer",
-        expires_in: expDate
       })
 
       return res.json({
         data: user || newUser,
+        device_login_id: deviceLogin ? deviceLogin._id : undefined,
         access_token: accessToken,
         refresh_token: refreshToken,
         token_type: "Bearer",
-        expires_in: expDate
+        expires_in: expDate,
       })
     })
     .catch((error) => {
@@ -148,33 +149,38 @@ const refreshToken = async (req, res) => {
   const { refresh_token } = req.body
   if (!refresh_token)
     return res.status(400).json({
-      message: "Refresh token is required"
+      message: "Refresh token is required",
     })
+
+  var revokedToken = await RevokedToken.findOne({refresh_token})  
+
+  if (revokedToken) {
+    return res.status(401).json({
+      message: "Unauthenticated",
+    })
+  }
 
   jsonwebtoken.verify(refresh_token, refreshTokenKey, async (error, data) => {
     if (error)
       return res.status(401).json({
-        message: "Unauthenticated"
+        message: "Unauthenticated",
       })
 
     const user = await User.findById(data.user._id).populate("country")
 
     if (!user)
       return res.status(401).json({
-        message: "Unauthenticated"
+        message: "Unauthenticated",
       })
 
-      // check user deleted account or not
+    // check user deleted account or not
     if (user.is_delete === true) {
       return res.status(401).json({
-        message: "Unauthenticated"
+        message: "Unauthenticated",
       })
     }
 
     // check refresh_token existing in devices list or not, if not reject access
-
-
-    
 
     // everything look good, user can access
     const accessToken = generateAccessToken(user, "7d")
@@ -185,19 +191,18 @@ const refreshToken = async (req, res) => {
 
     const { id } = user
 
-    await storeLogin(req, id, {
+    const deviceLogin = await updateLogin(req, id, refresh_token, {
       access_token: accessToken,
       refresh_token: refreshToken,
-      token_type: "Bearer",
-      expires_in: expDate
     })
 
     return res.json({
       data: user,
+      device_login_id: deviceLogin ? deviceLogin._id : undefined,
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: "Bearer",
-      expires_in: expDate
+      expires_in: expDate,
     })
   })
 }
@@ -207,37 +212,45 @@ const storeLogin = async (req, userId, token) => {
   const ip_address =
     req.headers["x-forwarded-for"] &&
     req.headers["x-forwarded-for"].split(",")[0]
-  const user_agent = req.headers["user-agent"]
-  const oldDevice = await DeviceLogin.findOne({
-    ip_address,
-    user_agent,
-    user
-  })
+  try {
+    const resonse = await axios.get(`${geoipApi}&ip_address=${ip_address}`)
+    if (resonse.status == 200) {
+      return await DeviceLogin.create({
+        ip_address,
+        geoip: resonse.data,
+        user,
+        access_token: token.access_token,
+        refresh_token: token.refresh_token,
+      })
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
 
-  if (!oldDevice) {
-    try {
-      const resonse = await axios.get(`${geoipApi}&ip_address=${ip_address}`)
-      if (resonse.status == 200) {
-        await DeviceLogin.create({
-          ip_address,
-          user_agent,
-          geoip: resonse.data,
-          user,
-          token
-        })
+const updateLogin = async (req, userId, oldResfreshToken, token) => {
+  const ip_address =
+    req.headers["x-forwarded-for"] &&
+    req.headers["x-forwarded-for"].split(",")[0]
+  try {
+    var device = await DeviceLogin.findOne({
+      refresh_token: oldResfreshToken,
+    })
+    if (device) {
+      if (device.ip_address != ip_address) {
+        device.ip_address = ip_address
+        const resonse = await axios.get(`${geoipApi}&ip_address=${ip_address}`)
+        if (resonse.status == 200) {
+          device.geoip = resonse.data
+        }
       }
-    } catch (error) {
-      console.log(error)
+      device.user = userId
+      device.access_token = token.access_token
+      device.refresh_token = token.refresh_token
+      return await device.save()
     }
-  } else {
-    try {
-      await DeviceLogin.updateOne(
-        { _id: oldDevice._id },
-        { token, loggin_time: Date.now() }
-      )
-    } catch (error) {
-      console.log(error)
-    }
+  } catch (error) {
+    console.log(error)
   }
 }
 
