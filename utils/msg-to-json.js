@@ -37,7 +37,7 @@ const msgToJson = (message, userId) => {
   } = message
   let jsonMessage = { _id, room, task, is_comment }
 
-  jsonMessage.deleted = deleted? deleted: deleted_by.includes(userId)
+  jsonMessage.deleted = deleted? deleted: (deleted_by? deleted_by.includes(userId): false)
 
   if (type) {
     jsonMessage.type = type

@@ -10,6 +10,7 @@ import { sendMessageToClient } from "./ws-message-controller.js"
 import User from "../models/user-model.js"
 import SubTask from "../models/sub-task-model.js"
 import { sendAnyNotification } from "./notification-controller.js"
+import { msgToJson } from "../utils/msg-to-json.js"
 
 const getTasks = (req, res) => {
   const { latest_timestamp } = req.query
@@ -18,26 +19,56 @@ const getTasks = (req, res) => {
   if (latest_timestamp) {
     query.updated_at = { $gte: latest_timestamp, $ne: latest_timestamp }
   }
-  if (latest_timestamp) {
-    Task.findWithDeleted(query)
-      .populate("subtasks")
-      // .populate("owner")
-      // .populate("assigned_to")
-      .populate("attachments")
-      .sort({ created_at: -1 })
-      .cursor()
-      .pipe(JSONStream.stringify())
-      .pipe(res.type("json"))
-  } else {
-    Task.find(query)
-      .populate("subtasks")
-      // .populate("owner")
-      // .populate("assigned_to")
-      .populate("attachments")
-      .sort({ created_at: -1 })
-      .cursor()
-      .pipe(JSONStream.stringify())
-      .pipe(res.type("json"))
+  try {
+    if (latest_timestamp) {
+      Task.findWithDeleted(query)
+        .populate("subtasks")
+        // .populate("owner")
+        // .populate("assigned_to")
+        .populate("attachments")
+        .populate({
+          path: "message",
+          populate: {
+            path: "sender",
+            select:
+              "_id first_name last_name profile_url is_online phone_number username",
+            populate: {
+              path: "contact",
+              select: "-created_at -updated_at",
+              match: { owner: { $eq: _id } },
+            },
+          },
+        })
+        .sort({ created_at: -1 })
+        .cursor()
+        .pipe(JSONStream.stringify())
+        .pipe(res.type("json"))
+    } else {
+      Task.find(query)
+        .populate("subtasks")
+        // .populate("owner")
+        // .populate("assigned_to")
+        .populate("attachments")
+        .populate({
+          path: "message",
+          populate: {
+            path: "sender",
+            select:
+              "_id first_name last_name profile_url is_online phone_number username",
+            populate: {
+              path: "contact",
+              select: "-created_at -updated_at",
+              match: { owner: { $eq: _id } },
+            },
+          },
+        })
+        .sort({ created_at: -1 })
+        .cursor()
+        .pipe(JSONStream.stringify())
+        .pipe(res.type("json"))
+    }
+  } catch (error) {
+    res.json({ error })
   }
 }
 
@@ -56,7 +87,7 @@ const createTask = async (req, res) => {
     heading,
     room,
     message_id,
-    member_ids
+    member_ids,
   } = req.body
 
   if (!label) {
@@ -64,7 +95,7 @@ const createTask = async (req, res) => {
   }
 
   try {
-    const task = await Task.create({
+    var task = await Task.create({
       owner: _id,
       label: label,
       heading,
@@ -78,8 +109,28 @@ const createTask = async (req, res) => {
       progress,
       note,
       message: message_id,
-      assigned_to: member_ids ? JSON.parse(member_ids) : undefined
+      assigned_to: member_ids ? JSON.parse(member_ids) : undefined,
     })
+    task = await Task.populate(task, [
+      { path: "subtasks" },
+      { path: "attachments" },
+      {
+        path: "message",
+        transform: (data) => {
+          return msgToJson(data, _id)
+        },
+        populate: {
+          path: "sender",
+          select:
+            "_id first_name last_name profile_url is_online phone_number username",
+          populate: {
+            path: "contact",
+            select: "-created_at -updated_at",
+            match: { owner: { $eq: _id } },
+          },
+        },
+      },
+    ])
     if (member_ids) {
       const user = req.user
       sendAnyNotification(
@@ -113,7 +164,7 @@ const editTask = async (req, res) => {
     heading,
     room,
     message_id,
-    member_ids
+    member_ids,
   } = req.body
 
   if (!label) {
@@ -125,7 +176,7 @@ const editTask = async (req, res) => {
   }
 
   try {
-    const task = await Task.findById(id)
+    let task = await Task.findById(id)
       .populate("subtasks")
       .populate("attachments")
     if (!task) return res.status(400).json({ message: "Task not found" })
@@ -144,7 +195,27 @@ const editTask = async (req, res) => {
     task.room = room
     task.message = message_id
     task.assigned_to = member_ids ? JSON.parse(member_ids) : undefined
-    await task.save()
+    task = await task.save()
+    task = await Task.populate(task, [
+      { path: "subtasks" },
+      { path: "attachments" },
+      {
+        path: "message",
+        transform: (data) => {
+          return msgToJson(data, _id)
+        },
+        populate: {
+          path: "sender",
+          select:
+            "_id first_name last_name profile_url is_online phone_number username",
+          populate: {
+            path: "contact",
+            select: "-created_at -updated_at",
+            match: { owner: { $eq: _id } },
+          },
+        },
+      },
+    ])
     if (member_ids) {
       const user = req.user
       sendAnyNotification(
@@ -313,7 +384,7 @@ const storeAttachment = async (filePath, taskId, userId) => {
     filename,
     size,
     task: taskId,
-    owner: userId
+    owner: userId,
   }
 }
 
@@ -331,7 +402,7 @@ const deleteAttachment = async (req, res) => {
       return res.status(400).json({ message: "Permission denined" })
     await Attachment.deleteMany({
       _id: { $in: JSON.parse(attachment_ids) },
-      task: id
+      task: id,
     })
     const updatedData = await Task.findById(id)
       .populate("subtasks")
@@ -350,5 +421,5 @@ export {
   editTask,
   assignTaskTo,
   removeAssignTaskTo,
-  deleteTask
+  deleteTask,
 }

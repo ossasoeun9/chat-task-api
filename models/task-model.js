@@ -2,7 +2,6 @@ import mongoose from "mongoose"
 import User from "./user-model.js"
 import mongooseAutoPopulate from "mongoose-autopopulate"
 import mongooseDelete from "mongoose-delete"
-import Message from "./message-model.js"
 
 /*
 Note:
@@ -29,12 +28,7 @@ const taskSchema = mongoose.Schema(
     note: String,
     owner: { type: mongoose.Types.ObjectId, required: true, ref: User },
     room: { type: mongoose.Types.ObjectId, default: null, ref: "Chat Room" },
-    message: {
-      type: mongoose.Types.ObjectId,
-      default: null,
-      ref: Message,
-      autopopulate: true,
-    },
+    message: { type: mongoose.Types.ObjectId, default: null, ref: "Message" },
     heading: { type: mongoose.Types.ObjectId, default: null, ref: "Heading" },
     assigned_to: [{ type: mongoose.Types.ObjectId, ref: User }],
     start_at: Date,
