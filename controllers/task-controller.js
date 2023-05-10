@@ -55,6 +55,7 @@ const createTask = async (req, res) => {
     note,
     heading,
     room,
+    message_id,
     member_ids
   } = req.body
 
@@ -76,6 +77,7 @@ const createTask = async (req, res) => {
       priority,
       progress,
       note,
+      message: message_id,
       assigned_to: member_ids ? JSON.parse(member_ids) : undefined
     })
     if (member_ids) {
@@ -110,6 +112,7 @@ const editTask = async (req, res) => {
     note,
     heading,
     room,
+    message_id,
     member_ids
   } = req.body
 
@@ -139,6 +142,7 @@ const editTask = async (req, res) => {
     task.heading = heading
     task.note = note
     task.room = room
+    task.message = message_id
     task.assigned_to = member_ids ? JSON.parse(member_ids) : undefined
     await task.save()
     if (member_ids) {
