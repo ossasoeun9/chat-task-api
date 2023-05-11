@@ -28,6 +28,7 @@ const taskSchema = mongoose.Schema(
     note: String,
     owner: { type: mongoose.Types.ObjectId, required: true, ref: User },
     room: { type: mongoose.Types.ObjectId, default: null, ref: "Chat Room" },
+    message: { type: mongoose.Types.ObjectId, default: null, ref: "Message" },
     heading: { type: mongoose.Types.ObjectId, default: null, ref: "Heading" },
     assigned_to: [{ type: mongoose.Types.ObjectId, ref: User }],
     start_at: Date,
@@ -36,14 +37,14 @@ const taskSchema = mongoose.Schema(
     depend_on: [{ type: mongoose.Types.ObjectId, ref: "Task" }],
     progress: { type: Number, default: 0 },
     priority: { type: Number, enum: [1, 2, 3, 4, 5], default: 1 },
-    status: { type: Number, enum: [1, 2, 3, 4, 5, 6], default: 1 }
+    status: { type: Number, enum: [1, 2, 3, 4, 5, 6], default: 1 },
   },
   {
     timestamps: {
       createdAt: "created_at",
-      updatedAt: "updated_at"
+      updatedAt: "updated_at",
     },
-    versionKey: false
+    versionKey: false,
   }
 )
 
@@ -51,7 +52,7 @@ taskSchema.plugin(mongooseAutoPopulate)
 taskSchema.plugin(mongooseDelete, {
   overrideMethods: "all",
   deletedBy: true,
-  deletedByType: String
+  deletedByType: String,
 })
 
 taskSchema.index(
@@ -62,13 +63,13 @@ taskSchema.index(
 taskSchema.virtual("attachments", {
   ref: "Attachment",
   localField: "_id",
-  foreignField: "task"
+  foreignField: "task",
 })
 
 taskSchema.virtual("subtasks", {
   ref: "Sub Task",
   localField: "_id",
-  foreignField: "parent"
+  foreignField: "parent",
 })
 
 taskSchema.set("toObject", { virtuals: true, getters: true })
@@ -78,7 +79,7 @@ taskSchema.set("toJSON", {
     return ret
   },
   virtuals: true,
-  getters: true
+  getters: true,
 })
 
 const Task = mongoose.model("Task", taskSchema)
